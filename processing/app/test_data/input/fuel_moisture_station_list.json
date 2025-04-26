@@ -1,0 +1,371 @@
+{
+	"modelId": "20250331080030",
+	"meteorological_stations": [
+		{
+			"station_name": "1",
+			"lat": "42.197217162329451",
+			"lon": "12.163408697089425",
+			"observations": [
+				{
+					"datetime": "2025-03-01T18:00:00",
+					"measurement": {
+						"temperature": 24.0,
+						"humidity": 50.0,
+						"precipitation": 5.0,
+						"solar_radiation": 1000.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T17:00:00",
+					"measurement": {
+						"temperature": 25.2,
+						"humidity": 48.5,
+						"precipitation": 3.0,
+						"solar_radiation": 1200.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T16:00:00",
+					"measurement": {
+						"temperature": 26.0,
+						"humidity": 47.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1350.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T15:00:00",
+					"measurement": {
+						"temperature": 26.5,
+						"humidity": 46.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1450.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T14:00:00",
+					"measurement": {
+						"temperature": 26.8,
+						"humidity": 45.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1500.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T13:00:00",
+					"measurement": {
+						"temperature": 25.5,
+						"humidity": 48.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1400.0
+					}
+				}
+			]
+		},
+		{
+			"station_name": "2",
+			"lat": "42.346200180737725 ",
+			"lon": "12.303470290085279",
+			"observations": [
+				{
+					"datetime": "2025-03-01T18:00:00",
+					"measurement": {
+						"temperature": 23.5,
+						"humidity": 52.0,
+						"precipitation": 4.2,
+						"solar_radiation": 950.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T17:00:00",
+					"measurement": {
+						"temperature": 24.8,
+						"humidity": 49.5,
+						"precipitation": 2.5,
+						"solar_radiation": 1150.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T16:00:00",
+					"measurement": {
+						"temperature": 25.5,
+						"humidity": 48.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1300.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T15:00:00",
+					"measurement": {
+						"temperature": 26.0,
+						"humidity": 47.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1400.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T14:00:00",
+					"measurement": {
+						"temperature": 26.2,
+						"humidity": 46.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1450.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T13:00:00",
+					"measurement": {
+						"temperature": 25.0,
+						"humidity": 49.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1350.0
+					}
+				}
+			]
+		},
+		{
+			"station_name": "3",
+			"lat": "42.058598824811035",
+			"lon": "12.416239869424583",
+			"observations": [
+				{
+					"datetime": "2025-03-01T18:00:00",
+					"measurement": {
+						"temperature": 24.5,
+						"humidity": 48.0,
+						"precipitation": 6.0,
+						"solar_radiation": 980.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T17:00:00",
+					"measurement": {
+						"temperature": 25.5,
+						"humidity": 46.5,
+						"precipitation": 3.5,
+						"solar_radiation": 1180.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T16:00:00",
+					"measurement": {
+						"temperature": 26.2,
+						"humidity": 45.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1320.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T15:00:00",
+					"measurement": {
+						"temperature": 26.8,
+						"humidity": 44.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1420.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T14:00:00",
+					"measurement": {
+						"temperature": 27.0,
+						"humidity": 43.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1480.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T13:00:00",
+					"measurement": {
+						"temperature": 25.8,
+						"humidity": 47.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1380.0
+					}
+				}
+			]
+		},
+		{
+			"station_name": "4",
+			"lat": "42.264040060826026",
+			"lon": "12.546926524161822",
+			"observations": [
+				{
+					"datetime": "2025-03-01T18:00:00",
+					"measurement": {
+						"temperature": 23.8,
+						"humidity": 51.0,
+						"precipitation": 5.5,
+						"solar_radiation": 970.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T17:00:00",
+					"measurement": {
+						"temperature": 24.9,
+						"humidity": 49.0,
+						"precipitation": 2.8,
+						"solar_radiation": 1170.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T16:00:00",
+					"measurement": {
+						"temperature": 25.8,
+						"humidity": 47.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1330.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T15:00:00",
+					"measurement": {
+						"temperature": 26.3,
+						"humidity": 46.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1430.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T14:00:00",
+					"measurement": {
+						"temperature": 26.5,
+						"humidity": 45.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1470.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T13:00:00",
+					"measurement": {
+						"temperature": 25.2,
+						"humidity": 48.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1370.0
+					}
+				}
+			]
+		},
+		{
+			"station_name": "5",
+			"lat": "42.0716490781488021",
+			"lon": "12.228706593691641",
+			"observations": [
+				{
+					"datetime": "2025-03-01T18:00:00",
+					"measurement": {
+						"temperature": 24.2,
+						"humidity": 49.5,
+						"precipitation": 4.8,
+						"solar_radiation": 990.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T17:00:00",
+					"measurement": {
+						"temperature": 25.3,
+						"humidity": 47.0,
+						"precipitation": 3.2,
+						"solar_radiation": 1190.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T16:00:00",
+					"measurement": {
+						"temperature": 26.1,
+						"humidity": 46.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1340.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T15:00:00",
+					"measurement": {
+						"temperature": 26.6,
+						"humidity": 45.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1440.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T14:00:00",
+					"measurement": {
+						"temperature": 26.9,
+						"humidity": 44.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1490.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T13:00:00",
+					"measurement": {
+						"temperature": 25.6,
+						"humidity": 46.5,
+						"precipitation": 0.0,
+						"solar_radiation": 1390.0
+					}
+				}
+			]
+		},
+		{
+			"station_name": "6",
+			"lat": "42.430368936723433",
+			"lon": "12.43263246119724",
+			"observations": [
+				{
+					"datetime": "2025-03-01T18:00:00",
+					"measurement": {
+						"temperature": 23.0,
+						"humidity": 53.0,
+						"precipitation": 4.5,
+						"solar_radiation": 930.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T17:00:00",
+					"measurement": {
+						"temperature": 24.0,
+						"humidity": 51.0,
+						"precipitation": 2.0,
+						"solar_radiation": 1130.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T16:00:00",
+					"measurement": {
+						"temperature": 25.0,
+						"humidity": 49.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1280.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T15:00:00",
+					"measurement": {
+						"temperature": 25.5,
+						"humidity": 48.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1380.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T14:00:00",
+					"measurement": {
+						"temperature": 25.8,
+						"humidity": 47.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1430.0
+					}
+				},
+				{
+					"datetime": "2025-03-01T13:00:00",
+					"measurement": {
+						"temperature": 24.5,
+						"humidity": 50.0,
+						"precipitation": 0.0,
+						"solar_radiation": 1330.0
+					}
+				}
+			]
+		}
+	]
+}
