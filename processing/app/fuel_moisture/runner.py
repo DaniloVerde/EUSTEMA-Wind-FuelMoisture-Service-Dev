@@ -2,6 +2,15 @@ import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple
 
+from .utils import (
+    convert_from_celsius_to_fahrenheit,
+    convert_from_mm_to_inches,
+)
+from .processing import (
+    get_surface_temperature,
+    get_eqmc,
+)
+
 def calculate_fuel_moisture_mock(
     temperature: float,
     humidity: float,
@@ -22,20 +31,19 @@ def calculate_fuel_moisture_mock(
     Returns:
         Calculated fuel moisture value
     """
-    # This is a simplified mock calculation - replace with actual algorithm
-    base_moisture = humidity / 2.0
-    temp_factor = 30.0 - temperature if temperature < 30.0 else 0.0
-    solar_factor = -0.01 * solar_radiation
-    precip_factor = precipitation_previous_hour * 2.0
-    
-    # If we have a previous moisture value, use it as a base and adjust
-    if previous_moisture is not None:
-        moisture = (previous_moisture + base_moisture + temp_factor + solar_factor + precip_factor) / 2.0
-    else:
-        moisture = base_moisture + temp_factor + solar_factor + precip_factor
-    
-    # Ensure moisture is within reasonable bounds
-    return max(0.0, min(100.0, moisture))
+    temperature_f = convert_from_celsius_to_fahrenheit(temperature)
+    precipitation_in_inches = convert_from_mm_to_inches(precipitation_previous_hour)
+
+    surface_temperature = get_surface_temperature(
+        temperature=temperature_f,
+        solar_radiation=solar_radiation
+    )
+    eqmc = get_eqmc(
+        surface_temperature=surface_temperature,
+        humidity=humidity
+    )
+
+    return
 
 def sort_observations_by_datetime(observations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
