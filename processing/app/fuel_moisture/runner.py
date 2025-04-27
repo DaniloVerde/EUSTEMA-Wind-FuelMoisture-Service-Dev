@@ -9,6 +9,7 @@ from .utils import (
 from .processing import (
     get_surface_temperature,
     get_eqmc,
+    get_rainfall_moisture_factor,
 )
 
 def calculate_fuel_moisture_mock(
@@ -36,11 +37,18 @@ def calculate_fuel_moisture_mock(
 
     surface_temperature = get_surface_temperature(
         temperature=temperature_f,
-        solar_radiation=solar_radiation
+        solar_radiation=solar_radiation,
     )
     eqmc = get_eqmc(
         surface_temperature=surface_temperature,
-        humidity=humidity
+        humidity=humidity,
+    )
+
+    if previous_moisture is None:
+        previous_moisture = eqmc
+
+    rmf = get_rainfall_moisture_factor(
+        precipitation=precipitation_in_inches,
     )
 
     return

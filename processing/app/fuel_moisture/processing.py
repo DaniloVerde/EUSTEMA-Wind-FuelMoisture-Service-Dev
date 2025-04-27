@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 import pandas as pd
 
-from .utils import round_5_value, round_100_value
+from .utils import round_5_value, round_100_value, round_001_value
 
 
 def get_surface_temperature(temperature, solar_radiation):
@@ -58,7 +58,8 @@ def get_surface_temperature(temperature, solar_radiation):
         if str(rounded_solar_radiation) in df.columns and rounded_temperature in df.index:
             surface_temperature = df.at[rounded_temperature, str(
                 rounded_solar_radiation)]
-            logger.info(f"Surface temperature value found: {surface_temperature}")
+            logger.info(
+                f"Surface temperature value found: {surface_temperature}")
             return surface_temperature
         else:
             logger.error(
@@ -72,46 +73,98 @@ def get_surface_temperature(temperature, solar_radiation):
 def get_eqmc(surface_temperature, humidity):
     """
     Calculates the equilibrium moisture content based on surface temperature and humidity.
-    
+
     Args:
         surface_temperature: Surface temperature in Celsius degrees
         humidity: Relative humidity percentage
-        
+
     Returns:
         float: Equilibrium moisture content value or None in case of error
     """
     logger = logging.getLogger(__name__)
-    
-    logger.debug(f"Calculating equilibrium moisture with surface_temperature={surface_temperature}, humidity={humidity}")
-    
+
+    logger.debug(
+        f"Calculating equilibrium moisture with surface_temperature={surface_temperature}, humidity={humidity}")
+
     try:
         current_dir = Path(__file__).resolve().parent
         csv_path = current_dir / "tables" / "eqmc.csv"
         df = pd.read_csv(csv_path, delimiter=";", index_col=0)
-        
+
         # Process humidity value
         if humidity <= 2.5:
             rounded_humidity = 2
-            logger.debug(f"Humidity {humidity} <= 2.5, set to {rounded_humidity}")
+            logger.debug(
+                f"Humidity {humidity} <= 2.5, set to {rounded_humidity}")
         elif humidity >= 97.5:
             rounded_humidity = 99
-            logger.debug(f"Humidity {humidity} >= 97.5, set to {rounded_humidity}")
+            logger.debug(
+                f"Humidity {humidity} >= 97.5, set to {rounded_humidity}")
         else:
             rounded_humidity = round_5_value(humidity)
-            logger.debug(f"Humidity in valid range, rounded to {rounded_humidity}")
-        
+            logger.debug(
+                f"Humidity in valid range, rounded to {rounded_humidity}")
+
         # Process surface temperature
         rounded_surface_temperature = round_5_value(surface_temperature)
-        logger.debug(f"Surface temperature rounded to {rounded_surface_temperature}")
-        
+        logger.debug(
+            f"Surface temperature rounded to {rounded_surface_temperature}")
+
         # Get value from table
         if rounded_surface_temperature in df.index and str(rounded_humidity) in df.columns:
             eqmc = df.at[rounded_surface_temperature, str(rounded_humidity)]
             logger.info(f"Equilibrium moisture content calculated: {eqmc}")
             return eqmc
         else:
-            logger.error(f"Error: row or column not found in the dataframe. Temperature={rounded_surface_temperature}, humidity={rounded_humidity}")
+            logger.error(
+                f"Error: row or column not found in the dataframe. Temperature={rounded_surface_temperature}, humidity={rounded_humidity}")
             return None
     except Exception as e:
         logger.exception(f"Error calculating equilibrium moisture: {str(e)}")
+        return None
+
+
+def get_rainfall_moisture_factor(precipitation):
+    """
+    Calculates the rainfall moisture factor based on hourly precipitation.
+
+    Args:
+        precipitation: Hourly precipitation value
+
+    Returns:
+        float: Rainfall moisture factor value or None in case of error
+    """
+    logger = logging.getLogger(__name__)
+
+    logger.debug(
+        f"Calculating rainfall moisture factor with precipitation={precipitation}")
+
+    try:
+        if precipitation <= 0:
+            logger.debug(f"Precipitation {precipitation} <= 0, returning 0")
+            return 0
+
+        rounded_precipitation = round_001_value(precipitation)
+        logger.debug(f"Precipitation rounded to {rounded_precipitation}")
+
+        if rounded_precipitation > 0.33:
+            logger.debug(
+                f"Precipitation {rounded_precipitation} > 0.33, returning 31")
+            return 31
+
+        current_dir = Path(__file__).resolve().parent
+        csv_path = current_dir / "tables" / "rainfall_moisture_factor.csv"
+        df = pd.read_csv(csv_path, delimiter=";", index_col=0)
+
+        if float(rounded_precipitation) in df.index:
+            rmf = df.loc[float(rounded_precipitation), "rmf"]
+            logger.info(f"Rainfall moisture factor calculated: {rmf}")
+            return rmf
+        else:
+            logger.error(
+                f"Error: value not found in the table for precipitation={rounded_precipitation}")
+            return None
+    except Exception as e:
+        logger.exception(
+            f"Error calculating rainfall moisture factor: {str(e)}")
         return None
