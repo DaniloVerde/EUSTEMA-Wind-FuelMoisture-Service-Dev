@@ -8,11 +8,14 @@ from .utils import (
 )
 from .processing import (
     get_surface_temperature,
-    get_eqmc,
+    get_equilibrium_moisture_content,
     get_rainfall_moisture_factor,
+    get_evaporation_correction_factor,
+    get_moisture_correction_factor,
 )
 
-def calculate_fuel_moisture_mock(
+
+def calculate_fuel_moisture_content(
     temperature: float,
     humidity: float,
     solar_radiation: float,
@@ -21,25 +24,26 @@ def calculate_fuel_moisture_mock(
 ) -> float:
     """
     Mock function to calculate fuel moisture based on weather parameters.
-    
+
     Args:
         temperature: Temperature in Celsius
         humidity: Relative humidity in percent
         solar_radiation: Solar radiation in W/m²
         precipitation_previous_hour: Precipitation from the previous hour in mm
         previous_moisture: Previously calculated moisture value (optional)
-    
+
     Returns:
         Calculated fuel moisture value
     """
     temperature_f = convert_from_celsius_to_fahrenheit(temperature)
-    precipitation_in_inches = convert_from_mm_to_inches(precipitation_previous_hour)
+    precipitation_in_inches = convert_from_mm_to_inches(
+        precipitation_previous_hour)
 
     surface_temperature = get_surface_temperature(
         temperature=temperature_f,
         solar_radiation=solar_radiation,
     )
-    eqmc = get_eqmc(
+    eqmc = get_equilibrium_moisture_content(
         surface_temperature=surface_temperature,
         humidity=humidity,
     )
@@ -51,15 +55,34 @@ def calculate_fuel_moisture_mock(
         precipitation=precipitation_in_inches,
     )
 
-    return
+    ecf = get_evaporation_correction_factor(
+        surface_temperature=surface_temperature,
+        previous_fuel_moisture=previous_moisture,
+    )
+
+    mcf = get_moisture_correction_factor(
+        surface_temperature=surface_temperature,
+        humidity=humidity,
+        eqmc=eqmc,
+        previous_fuel_moisture=previous_moisture,
+        precipitation=precipitation_in_inches,
+    )
+
+    fuel_moisture_content = previous_moisture + rmf + ecf + mcf
+
+    if fuel_moisture_content > 60.0:
+        fuel_moisture_content = 60.0
+
+    return fuel_moisture_content
+
 
 def sort_observations_by_datetime(observations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Sort observations from oldest to newest.
-    
+
     Args:
         observations: List of observation dictionaries
-    
+
     Returns:
         Sorted list of observations
     """
@@ -68,79 +91,85 @@ def sort_observations_by_datetime(observations: List[Dict[str, Any]]) -> List[Di
         key=lambda obs: datetime.fromisoformat(obs["datetime"])
     )
 
+
 def process_station_data(station: Dict[str, Any]) -> Tuple[str, float]:
     """
     Process a single station's data to calculate final fuel moisture.
-    
+
     Args:
         station: Station data dictionary
-    
+
     Returns:
         Tuple of (station_name, final_moisture_value)
     """
     station_name = station["station_name"]
-    sorted_observations = sort_observations_by_datetime(station["observations"])
-    
+    sorted_observations = sort_observations_by_datetime(
+        station["observations"])
+
     previous_moisture = None
     previous_precipitation = 0.0  # Initial value for the first calculation
-    
+
     for i, obs in enumerate(sorted_observations):
         measurement = obs["measurement"]
         temperature = measurement["temperature"]
         humidity = measurement["humidity"]
         solar_radiation = measurement["solar_radiation"]
-        
+
         # Use the previous hour's precipitation
         if i > 0:
-            previous_precipitation = sorted_observations[i-1]["measurement"]["precipitation"]
-        
+            previous_precipitation = sorted_observations[i -
+                                                         1]["measurement"]["precipitation"]
+
         # Calculate moisture using current weather data and previous moisture value
-        moisture = calculate_fuel_moisture_mock(
+        moisture = calculate_fuel_moisture_content(
             temperature=temperature,
             humidity=humidity,
             solar_radiation=solar_radiation,
             precipitation_previous_hour=previous_precipitation,
             previous_moisture=previous_moisture
         )
-        
+
         # Update previous_moisture for next iteration
         previous_moisture = moisture
-    
+
     # Return final moisture value after processing all observations
     return station_name, previous_moisture
+
 
 def process_fuel_moisture_data(json_data: Dict[str, Any]) -> Dict[str, float]:
     """
     Process fuel moisture data for all stations.
-    
+
     Args:
         json_data: JSON data structure containing station information and observations
-    
+
     Returns:
         Dictionary mapping station names to calculated fuel moisture values
     """
     results = {}
-    
+
     for station in json_data["meteorological_stations"]:
         station_name, final_moisture = process_station_data(station)
         results[station_name] = final_moisture
-    
+
     return results
+
 
 def run_fuel_moisture_calculation(input_file_path: str) -> Dict[str, float]:
     """
     Run fuel moisture calculation based on JSON input file.
-    
+
     Args:
         input_file_path: Path to the input JSON file
-    
+
     Returns:
         Dictionary mapping station names to calculated fuel moisture values
     """
     with open(input_file_path, 'r') as f:
         input_data = json.load(f)
-    
+
     return process_fuel_moisture_data(input_data)
+
 
 if __name__ == "__main__":
     # Example usage
