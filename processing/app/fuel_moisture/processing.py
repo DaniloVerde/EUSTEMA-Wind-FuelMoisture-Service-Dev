@@ -111,9 +111,18 @@ def get_equilibrium_moisture_content(surface_temperature, humidity):
                 f"Humidity in valid range, rounded to {rounded_humidity}")
 
         # Process surface temperature
-        rounded_surface_temperature = round_5_value(surface_temperature)
-        logger.debug(
-            f"Surface temperature rounded to {rounded_surface_temperature}")
+        if surface_temperature < 10:
+            rounded_surface_temperature = 10
+            logger.debug(
+                f"Surface temperature {surface_temperature} < 10, set to {rounded_surface_temperature}")
+        elif surface_temperature > 125:
+            rounded_surface_temperature = 125
+            logger.debug(
+                f"Surface temperature {surface_temperature} > 125, set to {rounded_surface_temperature}")
+        else:
+            rounded_surface_temperature = round_5_value(surface_temperature)
+            logger.debug(
+                f"Surface temperature rounded to {rounded_surface_temperature}")
 
         # Get value from table
         if rounded_surface_temperature in df.index and str(rounded_humidity) in df.columns:
