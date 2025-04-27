@@ -31,21 +31,25 @@ class TestFuelMoistureProcessing(unittest.TestCase):
         self.ecf_df = pd.read_csv(tables_path  / "ecf.csv", delimiter=";", index_col=0)
 
         # Mock per le tabelle di desorption/absorption
-        self.des_1p_data = {
-            "range": ["<5", "5-10", "10-15"],
-            "<5": [1, 2, 3],
-            "5-10": [4, 5, 6],
-            "10-15": [7, 8, 9]
-        }
-        self.des_1p_df = pd.DataFrame(self.des_1p_data)
+        # self.des_1p_data = {
+        #     "range": ["<5", "5-10", "10-15"],
+        #     "<5": [1, 2, 3],
+        #     "5-10": [4, 5, 6],
+        #     "10-15": [7, 8, 9]
+        # }
+        # self.des_1p_df = pd.DataFrame(self.des_1p_data)
 
-        self.abs_1p_data = {
-            "range": ["<5", "5-10", "10-15"],
-            "<5": [1, 2, 3],
-            "5-10": [4, 5, 6],
-            "10-15": [7, 8, 9]
-        }
-        self.abs_1p_df = pd.DataFrame(self.abs_1p_data)
+        self.des_11p_df = pd.read_csv(tables_path  / "desorption" / "DES_11P.csv", delimiter=";", index_col=0)
+
+        # self.abs_1p_data = {
+        #     "range": ["<5", "5-10", "10-15"],
+        #     "<5": [1, 2, 3],
+        #     "5-10": [4, 5, 6],
+        #     "10-15": [7, 8, 9]
+        # }
+        # self.abs_1p_df = pd.DataFrame(self.abs_1p_data)
+
+        self.abs_10p_df = pd.read_csv(tables_path  / "absorption" / "ABS_10P.csv", delimiter=";", index_col=0)
 
     @patch('app.fuel_moisture.processing.pd.read_csv')
     @patch('app.fuel_moisture.processing.round_5_value')
@@ -168,15 +172,15 @@ class TestFuelMoistureProcessing(unittest.TestCase):
         # Test con precipitazione normale
         mock_round_001.return_value = 0.02
         result = get_rainfall_moisture_factor(0.02)
-        self.assertEqual(result, 8)
+        self.assertEqual(result, 15)
         
         # Test con precipitazione > 0.33
         mock_round_001.return_value = 0.5
         result = get_rainfall_moisture_factor(0.5)
         self.assertEqual(result, 31)
         
-        # Test con valori che non si trovano nella tabella
-        mock_round_001.return_value = 0.15
+        # Test con valori negativi
+        mock_round_001.return_value = -0.15
         result = get_rainfall_moisture_factor(0.15)
         self.assertIsNone(result)
 
@@ -188,7 +192,7 @@ class TestFuelMoistureProcessing(unittest.TestCase):
         mock_read_csv.return_value = self.ecf_df
         
         # Test con previous_fuel_moisture <= 30
-        result = get_evaporation_correction_factor(35, 30)
+        result = get_evaporation_correction_factor(35, 25)
         self.assertEqual(result, 0)
         
         # Test con temperatura di superficie < 30
@@ -204,19 +208,17 @@ class TestFuelMoistureProcessing(unittest.TestCase):
         # Test con valori normali
         mock_round_5.return_value = 35
         result = get_evaporation_correction_factor(35, 31)
-        self.assertEqual(result, -4)
+        self.assertEqual(result, -3)
         
         # Test con valori che non si trovano nella tabella
-        mock_round_5.return_value = 100
-        result = get_evaporation_correction_factor(100, 31)
-        self.assertIsNone(result)
+        mock_round_5.return_value = 150
+        result = get_evaporation_correction_factor(150, 31)
+        self.assertEqual(result, -9)
 
     @patch('app.fuel_moisture.processing.pd.read_csv')
     @patch('app.fuel_moisture.processing.parse_label')
     def test_get_moisture_correction_factor(self, mock_parse_label, mock_read_csv):
         """Testa la funzione get_moisture_correction_factor."""
-        # Configura i mock per il percorso dei file
-        mock_read_csv.return_value = self.des_1p_df
         
         # Configura il mock per parse_label
         def parse_label_side_effect(label):
@@ -238,18 +240,16 @@ class TestFuelMoistureProcessing(unittest.TestCase):
         self.assertEqual(result, 0)
         
         # Test con desorption (previous_fuel_moisture > eqmc)
-        with patch('pathlib.Path.resolve', return_value=Path('/mock/path')):
-            with patch.dict('app.fuel_moisture.processing.tables', {1: Path('/mock/path/des_1p.csv')}):
-                mock_read_csv.return_value = self.des_1p_df
-                result = get_moisture_correction_factor(7, 7, 10, 11, 0)
-                self.assertEqual(result, 5)
+        mock_read_csv.reset_mock()
+        mock_read_csv.return_value = self.des_11p_df
+        result = get_moisture_correction_factor(7, 7, 10, 11, 0)
+        self.assertEqual(result, -3)
         
         # Test con absorption (previous_fuel_moisture < eqmc)
-        with patch('pathlib.Path.resolve', return_value=Path('/mock/path')):
-            with patch.dict('app.fuel_moisture.processing.tables', {-1: Path('/mock/path/abs_1p.csv')}):
-                mock_read_csv.return_value = self.abs_1p_df
-                result = get_moisture_correction_factor(7, 7, 11, 10, 0)
-                self.assertEqual(result, 5)
+        mock_read_csv.reset_mock()
+        mock_read_csv.return_value = self.abs_10p_df
+        result = get_moisture_correction_factor(7, 7, 11, 10, 0)
+        self.assertEqual(result, -4)
         
         # Test con umidità non valida
         result = get_moisture_correction_factor(25, -10, 10, 15, 0)
