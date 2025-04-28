@@ -158,7 +158,7 @@ def sort_observations_by_datetime(observations: List[Dict[str, Any]]) -> List[Di
     """
     return sorted(
         observations,
-        key=lambda obs: datetime.fromisoformat(obs["datetime"])
+        key=lambda obs: datetime.fromisoformat(obs["date_time"])
     )
 
 
