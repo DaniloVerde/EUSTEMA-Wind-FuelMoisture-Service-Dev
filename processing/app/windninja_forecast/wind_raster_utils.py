@@ -30,11 +30,3 @@ def create_wind_magnitude_direction(u_tiff_path, v_tiff_path, magnitude_output_p
         dst.write(wind_direction.astype(rasterio.float32), 1)
     
     print(f"File creati: {magnitude_output_path} e {direction_output_path}")
-
-# Esempio di utilizzo
-u_file = "percorso/al/tuo/file_u.tif"
-v_file = "percorso/al/tuo/file_v.tif"
-speed_output = "percorso/al/tuo/wind_speed.tif"
-direction_output = "percorso/al/tuo/wind_direction.tif"
-
-create_wind_magnitude_direction(u_file, v_file, speed_output, direction_output)
