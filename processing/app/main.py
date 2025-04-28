@@ -54,8 +54,8 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app with lifespan context manager
 app = FastAPI(
-    title="CU6.8 Processing API",
-    description="API for running WindNinja simulations",
+    title="CU6.7 Processing API",
+    description="API for running CU6.7 processing tasks",
     version="1.0.0",
     debug=DEBUG,
     lifespan=lifespan  # Use the lifespan context manager
