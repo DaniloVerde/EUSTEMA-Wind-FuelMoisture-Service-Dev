@@ -67,3 +67,19 @@ class FuelMoistureResponse(BaseModel):
     """Response model for fuel moisture processing."""
     modelId: str
     meteorological_stations: List[FuelMoistureStationResult]
+
+class WindNinjaForecastRequest(BaseModel):
+    """Model for the WindNinja forecast processing request."""
+    modelId: str
+    elevation_file: str
+    input_wind_height: Optional[str] = "10"
+    units_input_wind_height: Optional[str] = "m"
+    output_wind_height: Optional[str] = "10"
+    units_output_wind_height: Optional[str] = "m"
+    vegetation: Optional[str] = "trees"
+    wind_direction_file: str
+    wind_speed_file: str
+    input_speed_units: str = "mps"
+    uni_air_temp: str
+    uni_cloud_cover: str = "0"
+    simulation_time: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%dT%H:%M"))
