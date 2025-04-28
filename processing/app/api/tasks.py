@@ -11,6 +11,7 @@ from app.config.settings import DATA_DIR
 from app.windninja.input_generator import process_windninja_input
 from app.windninja.runner import run_windninja
 from app.windninja_forecast.input_generator import process_windninja_input as process_forecast_input
+from app.windninja_forecast.runner import run_windninja as run_forecast_windninja
 from app.messaging.kafka_producer import KafkaMessageProducer
 from app.storage.minio_client import MinioClient
 
@@ -148,56 +149,56 @@ def process_windninja_forecast_request(model_id, json_data):
         _, elevation_file, wind_speed_file, wind_direction_file, config_file = process_forecast_input(json_data, DATA_DIR)
         
         # Get input and output directories
-        # input_dir = os.path.join(DATA_DIR, model_id, "input")
-        # output_dir = os.path.join(DATA_DIR, model_id, "output")
-        # os.makedirs(output_dir, exist_ok=True)
+        input_dir = os.path.join(DATA_DIR, model_id, "input")
+        output_dir = os.path.join(DATA_DIR, model_id, "output")
+        os.makedirs(output_dir, exist_ok=True)
         
-        # # Send progress message: Input processed
-        # kafka_producer.send_simulation_progress(model_id, 30, "Input data processed, running WindNinja")
+        # Send progress message: Input processed
+        kafka_producer.send_simulation_progress(model_id, 30, "Input data processed, running WindNinja")
         
-        # # Run WindNinja with the generated configuration
-        # logger.info(f"Running WindNinja for model {model_id}")
-        # exit_code, stdout, stderr = run_windninja(config_file, working_dir=input_dir, output_dir=output_dir)
+        # Run WindNinja with the generated configuration
+        logger.info(f"Running WindNinja for model {model_id}")
+        exit_code, stdout, stderr = run_forecast_windninja(config_file, working_dir=input_dir, output_dir=output_dir)
         
-        # if exit_code != 0:
-        #     logger.error(f"WindNinja failed with exit code {exit_code}")
-        #     logger.error(f"Stderr: {stderr}")
-        #     error_message = f"WindNinja execution failed with exit code {exit_code}: {stderr}"
-        #     kafka_producer.send_simulation_failed(model_id, error_message)
-        #     return
+        if exit_code != 0:
+            logger.error(f"WindNinja failed with exit code {exit_code}")
+            logger.error(f"Stderr: {stderr}")
+            error_message = f"WindNinja execution failed with exit code {exit_code}: {stderr}"
+            kafka_producer.send_simulation_failed(model_id, error_message)
+            return
         
-        # # Send progress message: WindNinja completed
-        # kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
+        # Send progress message: WindNinja completed
+        kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
         
-        # # Initialize MinIO client
-        # minio_client = MinioClient()
+        # Initialize MinIO client
+        minio_client = MinioClient()
         
-        # # Derive the MinIO path from the elevation file path
-        # elevation_file_path = json_data.get('elevation_file')
-        # minio_base_path = os.path.dirname(os.path.dirname(elevation_file_path))
-        # results_path = f"{minio_base_path}/output"
+        # Derive the MinIO path from the elevation file path
+        elevation_file_path = json_data.get('elevation_file')
+        minio_base_path = os.path.dirname(os.path.dirname(elevation_file_path))
+        results_path = f"{minio_base_path}/output"
         
-        # # Upload results to MinIO
-        # logger.info(f"Uploading results to MinIO at {results_path}")
+        # Upload results to MinIO
+        logger.info(f"Uploading results to MinIO at {results_path}")
         
-        # uploaded_files = []
-        # for root, _, files in os.walk(output_dir):
-        #     for file in files:
-        #         local_file_path = os.path.join(root, file)
-        #         rel_path = os.path.relpath(local_file_path, output_dir)
-        #         minio_object_name = f"{results_path}/{rel_path}"
+        uploaded_files = []
+        for root, _, files in os.walk(output_dir):
+            for file in files:
+                local_file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(local_file_path, output_dir)
+                minio_object_name = f"{results_path}/{rel_path}"
                 
-        #         # Upload the file
-        #         minio_client.upload_file(local_file_path, minio_object_name)
-        #         uploaded_files.append(minio_object_name)
+                # Upload the file
+                minio_client.upload_file(local_file_path, minio_object_name)
+                uploaded_files.append(minio_object_name)
         
-        # # Send progress message: Results uploaded
-        # kafka_producer.send_simulation_progress(model_id, 90, "Results uploaded to storage")
+        # Send progress message: Results uploaded
+        kafka_producer.send_simulation_progress(model_id, 90, "Results uploaded to storage")
         
-        # # Send completion message
-        # logger.info(f"Processing completed for model {model_id}")
-        # results_url = f"{results_path}"
-        # kafka_producer.send_simulation_complete(model_id, "completed", results_url)
+        # Send completion message
+        logger.info(f"Processing completed for model {model_id}")
+        results_url = f"{results_path}"
+        kafka_producer.send_simulation_complete(model_id, "completed", results_url)
         
         # Send progress message: Processing completed
         kafka_producer.send_simulation_progress(model_id, 100, "Processing completed successfully")

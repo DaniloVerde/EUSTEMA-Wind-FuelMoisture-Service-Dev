@@ -62,19 +62,20 @@ def generate_station_files_from_json(json_filepath, data_dir, model_id=None):
         raise
 
 
-def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id=None):
+def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generico"):
     """
-    Scarica il file di elevazione da MinIO e lo salva nella directory specificata
+    Scarica un file da MinIO e lo salva nella directory specificata
 
     Args:
-        elevation_file_path (str): Percorso del file di elevazione in MinIO
+        file_path (str): Percorso del file in MinIO
         output_dir (str): Directory dove salvare il file
         model_id (str, optional): ID del modello, necessario per inviare messaggi Kafka in caso di errore
+        file_type (str, optional): Tipo di file per i messaggi di log, default "generico"
 
     Returns:
-        Path to the downloaded file
+        str: Percorso del file scaricato
     """
-    logger.debug(f"Avvio download file elevazione da: {elevation_file_path}")
+    logger.debug(f"Avvio download file {file_type} da: {file_path}")
     logger.debug(f"Directory di output: {output_dir}")
 
     try:
@@ -83,7 +84,7 @@ def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id
         logger.debug(f"Directory di output verificata: {output_dir}")
 
         # Get the filename from the path
-        filename = os.path.basename(elevation_file_path)
+        filename = os.path.basename(file_path)
         local_file_path = os.path.join(output_dir, filename)
         logger.debug(f"Percorso file locale: {local_file_path}")
 
@@ -97,13 +98,13 @@ def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id
 
         # Download directly to the final path
         logger.debug("Avvio download file...")
-        minio_client.download_file(elevation_file_path, local_file_path)
+        minio_client.download_file(file_path, local_file_path)
         logger.debug(f"Download completato in: {local_file_path}")
 
-        logger.info(f"Elevation file downloaded to {local_file_path}")
+        logger.info(f"File {file_type} scaricato in {local_file_path}")
         return local_file_path
     except Exception as e:
-        error_message = f"Errore nel download del file di elevazione '{elevation_file_path}' da MinIO: {str(e)}"
+        error_message = f"Errore nel download del file {file_type} '{file_path}' da MinIO: {str(e)}"
         logger.error(error_message)
 
         # Se è stato fornito un model_id, invia un messaggio Kafka
@@ -163,49 +164,45 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             f"Directory create: input={input_dir}, output={output_dir}")
 
         # Se non è stato specificato il file di elevazione, scaricalo da MinIO
-        # if not elevation_file and 'elevation_file' in json_data:
-        #     elevation_file_path = json_data.get('elevation_file')
-        #     logger.debug(
-        #         f"File elevazione da scaricare: {elevation_file_path}")
-        #     elevation_file = download_elevation_file_from_minio(
-        #         elevation_file_path,
-        #         input_dir,
-        #         model_id
-        #     )
-        #     logger.debug(f"File elevazione scaricato: {elevation_file}")
-        # elif not elevation_file:
-        #     logger.error(
-        #         "File di elevazione non specificato e non presente nel JSON")
-        #     raise ValueError(
-        #         "File di elevazione non specificato e non presente nel JSON")
+        if not elevation_file and 'elevation_file' in json_data:
+            elevation_file_path = json_data.get('elevation_file')
+            logger.debug(
+                f"File elevazione da scaricare: {elevation_file_path}")
+            elevation_file = download_file_from_minio(
+                elevation_file_path,
+                input_dir,
+                model_id
+            )
+            logger.debug(f"File elevazione scaricato: {elevation_file}")
+        elif not elevation_file:
+            logger.error(
+                "File di elevazione non specificato e non presente nel JSON")
+            raise ValueError(
+                "File di elevazione non specificato e non presente nel JSON")
 
-        # # Se non è stato specificato il file di velocità del vento, scaricalo da MinIO
-        # if not wind_speed_file and 'wind_speed_file' in json_data:
-        #     wind_speed_file_path = json_data.get('wind_speed_file')
-        #     logger.debug(
-        #         f"File velocità del vento da scaricare: {wind_speed_file_path}")
-        #     wind_speed_file = download_elevation_file_from_minio(
-        #         wind_speed_file_path,
-        #         input_dir,
-        #         model_id
-        #     )
-        #     logger.debug(f"File velocità del vento scaricato: {wind_speed_file}")
+        # Se non è stato specificato il file di velocità del vento, scaricalo da MinIO
+        if not wind_speed_file and 'wind_speed_file' in json_data:
+            wind_speed_file_path = json_data.get('wind_speed_file')
+            logger.debug(
+                f"File velocità del vento da scaricare: {wind_speed_file_path}")
+            wind_speed_file = download_file_from_minio(
+                wind_speed_file_path,
+                input_dir,
+                model_id
+            )
+            logger.debug(f"File velocità del vento scaricato: {wind_speed_file}")
         
-        # # Se non è stato specificato il file di direzione del vento, scaricalo da MinIO
-        # if not wind_direction_file and 'wind_direction_file' in json_data:
-        #     wind_direction_file_path = json_data.get('wind_direction_file')
-        #     logger.debug(
-        #         f"File direzione del vento da scaricare: {wind_direction_file_path}")
-        #     wind_direction_file = download_elevation_file_from_minio(
-        #         wind_direction_file_path,
-        #         input_dir,
-        #         model_id
-        #     )
-        #     logger.debug(f"File direzione del vento scaricato: {wind_direction_file}")
-
-        # Percorso del file di configurazione da generare
-        config_file_path = os.path.join(input_dir, f"{model_id}_windninja_forecast.cfg")
-        logger.debug(f"Percorso file di configurazione: {config_file_path}")
+        # Se non è stato specificato il file di direzione del vento, scaricalo da MinIO
+        if not wind_direction_file and 'wind_direction_file' in json_data:
+            wind_direction_file_path = json_data.get('wind_direction_file')
+            logger.debug(
+                f"File direzione del vento da scaricare: {wind_direction_file_path}")
+            wind_direction_file = download_file_from_minio(
+                wind_direction_file_path,
+                input_dir,
+                model_id
+            )
+            logger.debug(f"File direzione del vento scaricato: {wind_direction_file}")
 
         # Percorso del file di configurazione da generare
         config_file_path = os.path.join(input_dir, f"{model_id}_windninja_forecast.cfg")
@@ -264,6 +261,7 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             f"units_output_wind_height = {json_data['units_output_wind_height']}",
             f"vegetation               = {json_data['vegetation']}",
             f"uni_air_temp             = {json_data['uni_air_temp']}",
+            f"air_temp_units           = C",
             f"uni_cloud_cover          = {json_data['uni_cloud_cover']}",
             f"cloud_cover_units        = percent",
             f"mesh_resolution          = 500.0",
@@ -338,15 +336,12 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
         if 'elevation_file' in json_data:
             logger.debug(
                 f"Avvio download file elevazione: {json_data['elevation_file']}")
-            # elevation_file = download_elevation_file_from_minio(
-            #     json_data['elevation_file'],
-            #     input_dir,
-            #     model_id  # Passa il model_id alla funzione di download
-            # )
-
-            # Simulazione del download per il test
-            elevation_file = os.path.join(
-                input_dir, os.path.basename(json_data['elevation_file']))
+            elevation_file = download_file_from_minio(
+                json_data['elevation_file'],
+                input_dir,
+                model_id,
+                file_type="elevazione",
+            )
             logger.debug(f"File elevazione scaricato: {elevation_file}")
         else:
             logger.debug("Nessun file di elevazione specificato nel JSON")
@@ -355,17 +350,14 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
         if 'wind_speed_file' in json_data:
             logger.debug(
                 f"Avvio download file velocità del vento: {json_data['wind_speed_file']}")
-            # elevation_file = download_elevation_file_from_minio(
-            #     json_data['elevation_file'],
-            #     input_dir,
-            #     model_id  # Passa il model_id alla funzione di download
-            # )
-
-            # Simulazione del download per il test
-            wind_speed_file = os.path.join(
-                input_dir, os.path.basename(json_data['wind_speed_file']))
+            wind_speed_file = download_file_from_minio(
+                json_data['wind_speed_file'],
+                input_dir,
+                model_id,
+                file_type="velocità del vento",
+            )
             logger.debug(
-                f"File velocità del vento scaricato: {elevation_file}")
+                f"File velocità del vento scaricato: {wind_speed_file}")
         else:
             logger.debug(
                 "Nessun file di velocità del vento specificato nel JSON")
@@ -374,17 +366,14 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
         if 'wind_direction_file' in json_data:
             logger.debug(
                 f"Avvio download file direzione del vento: {json_data['wind_direction_file']}")
-            # elevation_file = download_elevation_file_from_minio(
-            #     json_data['elevation_file'],
-            #     input_dir,
-            #     model_id  # Passa il model_id alla funzione di download
-            # )
-
-            # Simulazione del download per il test
-            wind_direction_file = os.path.join(
-                input_dir, os.path.basename(json_data['wind_direction_file']))
+            wind_direction_file = download_file_from_minio(
+                json_data['wind_direction_file'],
+                input_dir,
+                model_id,
+                file_type="direzione del vento",
+            )
             logger.debug(
-                f"File direzione del vento scaricato: {elevation_file}")
+                f"File direzione del vento scaricato: {wind_direction_file}")
         else:
             logger.debug(
                 "Nessun file di direzione del vento specificato nel JSON")
