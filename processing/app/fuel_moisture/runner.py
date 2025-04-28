@@ -131,7 +131,7 @@ def calculate_fuel_moisture_content(
         
         # Calculate final fuel moisture content
         fuel_moisture_content = previous_moisture + rmf + ecf + mcf
-        logger.debug(f"Initial fuel moisture calculation: {previous_moisture} + {rmf} + {ecf} + {mcf} = {fuel_moisture_content}")
+        logger.debug(f"Final fuel moisture calculation: {previous_moisture} + {rmf} + {ecf} + {mcf} = {fuel_moisture_content}")
         
         # Cap the maximum value at 60%
         if fuel_moisture_content > 60.0:
