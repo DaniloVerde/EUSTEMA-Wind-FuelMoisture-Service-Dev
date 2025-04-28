@@ -1,0 +1,15 @@
+{
+	"modelId": "20250331080030",
+	"elevation_file": "20250331080030/input/w46575_s10.tif",
+    "input_wind_height": "10",
+    "units_input_wind_height": "m",
+	"output_wind_height": "10",
+	"units_output_wind_height": "m",
+	"vegetation": "trees",
+    "wind_direction_file": "20250331080030/input/wind_direction.tif",
+    "wind_speed_file": "20250331080030/input/wind_speed.tif",
+    "input_speed_units": "mps",
+    "uni_air_temp": "24",
+    "uni_cloud_cover": "0",
+    "simulation_time": "2025-03-31T12:00"
+}
