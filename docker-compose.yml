@@ -51,7 +51,7 @@ services:
     volumes:
       - ./processing/app:/app
       - ./data/processing:/data
-    # command: python3 -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m fastapi run /app/main.py
-    command: fastapi run /app/main.py
+    command: python3 -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m fastapi run /app/main.py
+    # command: fastapi run /app/main.py
     env_file:
       - .env
