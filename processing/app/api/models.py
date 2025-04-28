@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
 
 class MeteorologicalStation(BaseModel):
@@ -34,3 +34,36 @@ class ProcessingResponse(BaseModel):
     status: str
     message: str
     timestamp: datetime = Field(default_factory=datetime.now)
+
+class Measurement(BaseModel):
+    """Model for meteorological measurements."""
+    temperature: float
+    humidity: float
+    precipitation: float
+    solar_radiation: float
+
+class Observation(BaseModel):
+    """Model for a single observation with datetime and measurements."""
+    datetime: str
+    measurement: Measurement
+
+class FuelMoistureStation(BaseModel):
+    """Model for a meteorological station with observations for fuel moisture calculation."""
+    station_name: str
+    lat: str
+    lon: str
+    observations: List[Observation]
+
+class FuelMoistureStationResult(FuelMoistureStation):
+    """Model for a meteorological station with calculated fuel moisture value."""
+    fuel_moisture: Optional[float] = None
+
+class FuelMoistureRequest(BaseModel):
+    """Model for the Fuel Moisture processing request."""
+    modelId: str
+    meteorological_stations: List[FuelMoistureStation]
+
+class FuelMoistureResponse(BaseModel):
+    """Response model for fuel moisture processing."""
+    modelId: str
+    meteorological_stations: List[FuelMoistureStationResult]
