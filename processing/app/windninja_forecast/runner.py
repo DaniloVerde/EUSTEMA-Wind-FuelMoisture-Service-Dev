@@ -7,17 +7,17 @@ logger = logging.getLogger(__name__)
 
 def run_windninja(config_file, working_dir=None, output_dir=None, timeout=None):
     """
-    Esegue WindNinja con il file di configurazione specificato.
+    Runs WindNinja with the specified configuration file.
     
     Args:
-        config_file (str): Percorso del file di configurazione
-        working_dir (str, optional): Directory di lavoro per l'esecuzione
-        timeout (int, optional): Timeout in secondi per l'esecuzione
+        config_file (str): Path to the configuration file
+        working_dir (str, optional): Working directory for execution
+        timeout (int, optional): Timeout in seconds for execution
         
     Returns:
         tuple: (exit_code, stdout, stderr)
     """
-    logger.info(f"Avvio WindNinja con config_file: {config_file}")
+    logger.info(f"Starting WindNinja with config_file: {config_file}")
     
     try:
         if output_dir:
@@ -25,7 +25,7 @@ def run_windninja(config_file, working_dir=None, output_dir=None, timeout=None):
         else:
             command = ["WindNinja_cli", "--config_file", config_file]
         
-        # Esegui il comando WindNinja_cli
+        # Execute WindNinja_cli command
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -34,23 +34,23 @@ def run_windninja(config_file, working_dir=None, output_dir=None, timeout=None):
             cwd=working_dir
         )
         
-        # Attendi il completamento con timeout opzionale
+        # Wait for completion with optional timeout
         stdout, stderr = process.communicate(timeout=timeout)
         exit_code = process.returncode
         
         if exit_code == 0:
-            logger.info("WindNinja eseguito con successo")
+            logger.info("WindNinja executed successfully")
         else:
-            logger.error(f"WindNinja fallito con exit code {exit_code}")
+            logger.error(f"WindNinja failed with exit code {exit_code}")
             logger.error(f"Stderr: {stderr}")
         
         return exit_code, stdout, stderr
     
     except subprocess.TimeoutExpired:
-        logger.error(f"Timeout scaduto ({timeout}s) durante l'esecuzione di WindNinja")
+        logger.error(f"Timeout expired ({timeout}s) during WindNinja execution")
         process.kill()
         return -1, "", "Timeout expired"
     
     except Exception as e:
-        logger.error(f"Errore durante l'esecuzione di WindNinja: {str(e)}")
+        logger.error(f"Error during WindNinja execution: {str(e)}")
         return -1, "", str(e)

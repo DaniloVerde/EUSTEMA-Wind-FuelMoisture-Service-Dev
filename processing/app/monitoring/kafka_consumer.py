@@ -6,10 +6,10 @@ from datetime import datetime
 from kafka import KafkaConsumer
 from colorama import Fore, Style, init
 
-# Inizializza colorama per il supporto dei colori su Windows
+# Initialize colorama for color support on Windows
 init()
 
-# Configurazione logging
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -18,32 +18,32 @@ logging.basicConfig(
 logger = logging.getLogger("kafka_consumer")
 
 class KafkaMessageConsumer:
-    """Consumer Kafka per monitorare i messaggi di elaborazione WindNinja."""
+    """Kafka Consumer to monitor WindNinja processing messages."""
     
     def __init__(self, bootstrap_servers, topic, group_id=None, simulation_id=None):
         """
-        Inizializza il consumer Kafka.
+        Initialize the Kafka consumer.
         
         Args:
-            bootstrap_servers: Lista di server bootstrap Kafka
-            topic: Topic Kafka da cui consumare i messaggi
-            group_id: Group ID per il consumer, se None viene creato un nuovo gruppo
-            simulation_id: Se specificato, filtra solo i messaggi di questa simulazione
+            bootstrap_servers: List of Kafka bootstrap servers
+            topic: Kafka topic to consume messages from
+            group_id: Group ID for the consumer, if None a new group is created
+            simulation_id: If specified, filter only messages for this simulation
         """
         self.bootstrap_servers = bootstrap_servers
         self.topic = topic
         self.group_id = group_id or f"windninja-monitor-{int(time.time())}"
         self.simulation_id = simulation_id
         self.active = True
-        self.last_progress = {}  # Per memorizzare l'ultimo progresso di ogni simulazione
+        self.last_progress = {}  # To store the last progress of each simulation
         
-        logger.info(f"Inizializzazione consumer Kafka con bootstrap servers: {bootstrap_servers}")
+        logger.info(f"Initializing Kafka consumer with bootstrap servers: {bootstrap_servers}")
         logger.info(f"Topic: {topic}, Group ID: {self.group_id}")
         if simulation_id:
-            logger.info(f"Filtraggio messaggi per simulation_id: {simulation_id}")
+            logger.info(f"Filtering messages for simulation_id: {simulation_id}")
     
     def initialize_consumer(self):
-        """Inizializza il consumer Kafka."""
+        """Initialize the Kafka consumer."""
         try:
             self.consumer = KafkaConsumer(
                 self.topic,
@@ -53,26 +53,26 @@ class KafkaMessageConsumer:
                 group_id=self.group_id,
                 value_deserializer=lambda m: json.loads(m.decode('utf-8'))
             )
-            logger.info("Consumer Kafka inizializzato con successo")
+            logger.info("Kafka consumer successfully initialized")
             return True
         except Exception as e:
-            logger.error(f"Errore nell'inizializzazione del consumer Kafka: {str(e)}")
+            logger.error(f"Error initializing Kafka consumer: {str(e)}")
             return False
     
     def start_consuming(self):
-        """Inizia a consumare messaggi dal topic."""
+        """Start consuming messages from the topic."""
         if not hasattr(self, 'consumer'):
             if not self.initialize_consumer():
-                logger.error("Impossibile iniziare a consumare: consumer non inizializzato")
+                logger.error("Unable to start consuming: consumer not initialized")
                 return
         
-        logger.info(f"Inizio consumo messaggi da topic {self.topic}")
-        print(f"\n{Fore.CYAN}===== Monitoraggio messaggi WindNinja =====")
+        logger.info(f"Starting message consumption from topic {self.topic}")
+        print(f"\n{Fore.CYAN}===== WindNinja Messages Monitoring =====")
         print(f"Topic: {self.topic}")
         if self.simulation_id:
-            print(f"Filtraggio per Simulation ID: {self.simulation_id}{Style.RESET_ALL}\n")
+            print(f"Filtering by Simulation ID: {self.simulation_id}{Style.RESET_ALL}\n")
         else:
-            print(f"Monitoraggio tutte le simulazioni{Style.RESET_ALL}\n")
+            print(f"Monitoring all simulations{Style.RESET_ALL}\n")
         
         try:
             for message in self.consumer:
@@ -81,32 +81,32 @@ class KafkaMessageConsumer:
                 
                 value = message.value
                 
-                # Filtra per simulation_id se specificato
+                # Filter by simulation_id if specified
                 if self.simulation_id and value.get('simulation_id') != self.simulation_id:
                     continue
                 
                 self.process_message(value)
         except KeyboardInterrupt:
-            logger.info("Interruzione da tastiera, arresto del consumer")
-            print(f"\n{Fore.YELLOW}Monitoraggio interrotto dall'utente{Style.RESET_ALL}")
+            logger.info("Keyboard interruption, stopping consumer")
+            print(f"\n{Fore.YELLOW}Monitoring interrupted by user{Style.RESET_ALL}")
         except Exception as e:
-            logger.error(f"Errore durante il consumo dei messaggi: {str(e)}")
-            print(f"\n{Fore.RED}Errore durante il monitoraggio: {str(e)}{Style.RESET_ALL}")
+            logger.error(f"Error while consuming messages: {str(e)}")
+            print(f"\n{Fore.RED}Error during monitoring: {str(e)}{Style.RESET_ALL}")
         finally:
             self.close()
     
     def process_message(self, message):
         """
-        Elabora un messaggio ricevuto da Kafka.
+        Process a message received from Kafka.
         
         Args:
-            message: Il messaggio deserializzato ricevuto da Kafka
+            message: The deserialized message received from Kafka
         """
         event_type = message.get('event_type')
         simulation_id = message.get('simulation_id', 'unknown')
         timestamp = message.get('timestamp', datetime.now().isoformat())
         
-        # Formatta la data/ora per la visualizzazione
+        # Format date/time for display
         try:
             dt = datetime.fromisoformat(timestamp)
             formatted_time = dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -117,55 +117,55 @@ class KafkaMessageConsumer:
             progress = message.get('progress', 0)
             status = message.get('status', '')
             
-            # Memorizza l'ultimo progresso per questa simulazione
+            # Store the last progress for this simulation
             self.last_progress[simulation_id] = progress
             
-            # Formatta la barra di progresso
+            # Format the progress bar
             progress_bar = self.format_progress_bar(progress)
             
-            print(f"{Fore.BLUE}[{formatted_time}] {Fore.GREEN}Simulazione {simulation_id}: {progress}% {progress_bar}")
+            print(f"{Fore.BLUE}[{formatted_time}] {Fore.GREEN}Simulation {simulation_id}: {progress}% {progress_bar}")
             print(f"{Fore.CYAN}    {status}{Style.RESET_ALL}")
             
         elif event_type == 'simulation_complete':
             status = message.get('status', 'completed')
             results_url = message.get('results_url', '')
             
-            print(f"\n{Fore.BLUE}[{formatted_time}] {Fore.GREEN}Simulazione {simulation_id}: {Fore.YELLOW}COMPLETATA")
-            print(f"{Fore.GREEN}    Stato: {status}")
-            print(f"{Fore.GREEN}    Risultati disponibili in: {Fore.CYAN}{results_url}{Style.RESET_ALL}")
+            print(f"\n{Fore.BLUE}[{formatted_time}] {Fore.GREEN}Simulation {simulation_id}: {Fore.YELLOW}COMPLETED")
+            print(f"{Fore.GREEN}    Status: {status}")
+            print(f"{Fore.GREEN}    Results available at: {Fore.CYAN}{results_url}{Style.RESET_ALL}")
             
         elif event_type == 'simulation_failed':
             error = message.get('error', 'Unknown error')
             
-            print(f"\n{Fore.BLUE}[{formatted_time}] {Fore.RED}Simulazione {simulation_id}: FALLITA")
-            print(f"{Fore.RED}    Errore: {error}{Style.RESET_ALL}")
+            print(f"\n{Fore.BLUE}[{formatted_time}] {Fore.RED}Simulation {simulation_id}: FAILED")
+            print(f"{Fore.RED}    Error: {error}{Style.RESET_ALL}")
             
         else:
-            # Messaggi di tipo sconosciuto
-            print(f"\n{Fore.BLUE}[{formatted_time}] {Fore.YELLOW}Messaggio sconosciuto per simulazione {simulation_id}:")
-            print(f"{Fore.YELLOW}    Tipo: {event_type}")
-            print(f"{Fore.YELLOW}    Contenuto: {json.dumps(message, indent=2)}{Style.RESET_ALL}")
+            # Unknown message types
+            print(f"\n{Fore.BLUE}[{formatted_time}] {Fore.YELLOW}Unknown message for simulation {simulation_id}:")
+            print(f"{Fore.YELLOW}    Type: {event_type}")
+            print(f"{Fore.YELLOW}    Content: {json.dumps(message, indent=2)}{Style.RESET_ALL}")
     
     def format_progress_bar(self, progress, width=30):
         """
-        Formatta una barra di progresso testuale.
+        Format a text progress bar.
         
         Args:
-            progress: Percentuale di completamento (0-100)
-            width: Larghezza della barra di progresso in caratteri
+            progress: Completion percentage (0-100)
+            width: Width of the progress bar in characters
             
         Returns:
-            Stringa con la barra di progresso
+            String with the progress bar
         """
         try:
             progress = float(progress)
-            # Assicura che il progresso sia tra 0 e 100
+            # Ensure progress is between 0 and 100
             progress = max(0, min(100, progress))
             
-            # Calcola quanti caratteri di "pieno" mostrare
+            # Calculate how many "filled" characters to show
             completed = int(width * progress / 100)
             
-            # Costruisci la barra di progresso
+            # Build the progress bar
             bar = '█' * completed + '░' * (width - completed)
             
             return f"[{bar}]"
@@ -173,29 +173,29 @@ class KafkaMessageConsumer:
             return f"[{'?' * width}]"
     
     def close(self):
-        """Chiude il consumer."""
+        """Close the consumer."""
         if hasattr(self, 'consumer'):
             self.consumer.close()
-            logger.info("Consumer Kafka chiuso")
+            logger.info("Kafka consumer closed")
         self.active = False
 
 
 def main():
-    """Funzione principale per l'esecuzione del consumer da linea di comando."""
-    parser = argparse.ArgumentParser(description='Consumer Kafka per monitorare i messaggi di elaborazione WindNinja')
+    """Main function for running the consumer from command line."""
+    parser = argparse.ArgumentParser(description='Kafka Consumer to monitor WindNinja processing messages')
     
     parser.add_argument('--bootstrap-servers', type=str, default='localhost:9092',
-                        help='Lista di server bootstrap Kafka (default: localhost:9092)')
+                        help='List of Kafka bootstrap servers (default: localhost:9092)')
     parser.add_argument('--topic', type=str, default='windninja-events',
-                        help='Topic Kafka da cui consumare i messaggi (default: windninja-events)')
+                        help='Kafka topic to consume messages from (default: windninja-events)')
     parser.add_argument('--group-id', type=str, default=None,
-                        help='Group ID per il consumer Kafka (default: generato automaticamente)')
+                        help='Group ID for the Kafka consumer (default: automatically generated)')
     parser.add_argument('--simulation-id', type=str, default=None,
-                        help='Filtra i messaggi per uno specifico ID di simulazione')
+                        help='Filter messages for a specific simulation ID')
     
     args = parser.parse_args()
     
-    # Crea e avvia il consumer
+    # Create and start the consumer
     consumer = KafkaMessageConsumer(
         bootstrap_servers=args.bootstrap_servers,
         topic=args.topic,
@@ -206,7 +206,7 @@ def main():
     try:
         consumer.start_consuming()
     except KeyboardInterrupt:
-        print("\nChiusura del consumer...")
+        print("\nClosing consumer...")
     finally:
         consumer.close()
 

@@ -11,85 +11,85 @@ logger = logging.getLogger(__name__)
 
 def generate_station_files_from_json(json_filepath, data_dir, model_id=None):
     """
-    Genera file CSV per stazioni meteo a partire da un file JSON.
+    Generate CSV files for weather stations from a JSON file.
 
     Args:
-        json_filepath (str): Percorso del file JSON contenente i dati delle stazioni meteo
-        data_dir (str): Directory base per i dati di output
-        model_id (str, optional): ID del modello da utilizzare, se non fornito verrà utilizzato quello nel JSON
+        json_filepath (str): Path to the JSON file containing weather station data
+        data_dir (str): Base directory for output data
+        model_id (str, optional): Model ID to use, if not provided it will use the one in the JSON
 
     Returns:
         tuple: (model_id, csv_files, list_filepath)
     """
-    logger.info(f"Generazione file stazioni da {json_filepath}")
+    logger.info(f"Generating station files from {json_filepath}")
     logger.debug(
-        f"Parametri ricevuti: data_dir={data_dir}, model_id={model_id}")
+        f"Received parameters: data_dir={data_dir}, model_id={model_id}")
 
     try:
-        # Leggi il JSON se è stato fornito un filepath, altrimenti assumiamo che sia già stato caricato
+        # Read the JSON if a filepath was provided, otherwise assume it's already loaded
         if isinstance(json_filepath, (str, Path)):
-            logger.debug(f"Apertura file JSON da percorso: {json_filepath}")
+            logger.debug(f"Opening JSON file from path: {json_filepath}")
             with open(json_filepath, 'r') as jsonfile:
                 json_data = json.load(jsonfile)
         else:
-            logger.debug("Elaborazione dati JSON già caricati in memoria")
+            logger.debug("Processing JSON data already loaded in memory")
             json_data = json_filepath
             json_filepath = "input JSON data"
 
-        # Estrai model_id dal JSON se non specificato
+        # Extract model_id from JSON if not specified
         if model_id is None:
             model_id = json_data.get('modelId')
-            logger.debug(f"Model ID estratto dal JSON: {model_id}")
+            logger.debug(f"Model ID extracted from JSON: {model_id}")
             if not model_id:
-                logger.error("Impossibile trovare modelId nel JSON")
+                logger.error("Unable to find modelId in JSON")
                 raise ValueError(
-                    "modelId non trovato nel JSON e non specificato come parametro")
+                    "modelId not found in JSON and not specified as parameter")
 
-        # Genera i file CSV per le stazioni
-        logger.debug(f"Avvio generazione CSV con model_id={model_id}")
+        # Generate CSV files for stations
+        logger.debug(f"Starting CSV generation with model_id={model_id}")
         csv_files, list_filepath = json_to_station_csv(
             json_data, data_dir, model_id)
-        logger.debug(f"File CSV generati: {len(csv_files)}")
-        logger.debug(f"File lista stazioni creato: {list_filepath}")
+        logger.debug(f"CSV files generated: {len(csv_files)}")
+        logger.debug(f"Station list file created: {list_filepath}")
 
         logger.info(
-            f"Generazione completata: {len(csv_files)} stazioni per il modello {model_id}")
+            f"Generation completed: {len(csv_files)} stations for model {model_id}")
         return model_id, csv_files, list_filepath
 
     except Exception as e:
         logger.error(
-            f"Errore nella generazione dei file stazioni da {json_filepath}: {str(e)}")
+            f"Error generating station files from {json_filepath}: {str(e)}")
         raise
 
 
-def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generico"):
+def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generic"):
     """
-    Scarica un file da MinIO e lo salva nella directory specificata
+    Download a file from MinIO and save it to the specified directory
 
     Args:
-        file_path (str): Percorso del file in MinIO
-        output_dir (str): Directory dove salvare il file
-        model_id (str, optional): ID del modello, necessario per inviare messaggi Kafka in caso di errore
-        file_type (str, optional): Tipo di file per i messaggi di log, default "generico"
+        file_path (str): Path to the file in MinIO
+        output_dir (str): Directory where to save the file
+        model_id (str, optional): Model ID, needed to send Kafka messages in case of error
+        file_type (str, optional): File type for log messages, default "generic"
 
     Returns:
-        str: Percorso del file scaricato
+        str: Path to the downloaded file
     """
-    logger.debug(f"Avvio download file {file_type} da: {file_path}")
-    logger.debug(f"Directory di output: {output_dir}")
+    logger.debug(f"Starting download of {file_type} file from: {file_path}")
+    logger.debug(f"Output directory: {output_dir}")
 
     try:
         # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
-        logger.debug(f"Directory di output verificata: {output_dir}")
+        logger.debug(f"Output directory verified: {output_dir}")
 
         # Get the filename from the path
         filename = os.path.basename(file_path)
         local_file_path = os.path.join(output_dir, filename)
-        logger.debug(f"Percorso file locale: {local_file_path}")
+        logger.debug(f"Local file path: {local_file_path}")
 
         # Initialize MinIO client and download the file
-        logger.debug("Inizializzazione client MinIO")
+        logger.debug("Initializing MinIO client")
         minio_client = MinioClient()
 
         # Remove the file if it already exists to avoid conflicts
@@ -97,17 +97,17 @@ def download_file_from_minio(file_path, output_dir, model_id=None, file_type="ge
         #     os.remove(local_file_path)
 
         # Download directly to the final path
-        logger.debug("Avvio download file...")
+        logger.debug("Starting file download...")
         minio_client.download_file(file_path, local_file_path)
-        logger.debug(f"Download completato in: {local_file_path}")
+        logger.debug(f"Download completed to: {local_file_path}")
 
-        logger.info(f"File {file_type} scaricato in {local_file_path}")
+        logger.info(f"{file_type.capitalize()} file downloaded to {local_file_path}")
         return local_file_path
     except Exception as e:
-        error_message = f"Errore nel download del file {file_type} '{file_path}' da MinIO: {str(e)}"
+        error_message = f"Error downloading {file_type} file '{file_path}' from MinIO: {str(e)}"
         logger.error(error_message)
 
-        # Se è stato fornito un model_id, invia un messaggio Kafka
+        # If a model_id was provided, send a Kafka message
         if model_id:
             try:
                 from ..messaging.kafka_producer import KafkaMessageProducer
@@ -117,104 +117,104 @@ def download_file_from_minio(file_path, output_dir, model_id=None, file_type="ge
                     error_message=error_message
                 )
                 logger.info(
-                    f"Messaggio di errore inviato a Kafka per il modello {model_id}")
+                    f"Error message sent to Kafka for model {model_id}")
             except Exception as kafka_err:
                 logger.error(
-                    f"Impossibile inviare messaggio Kafka: {str(kafka_err)}")
+                    f"Unable to send Kafka message: {str(kafka_err)}")
 
-        # Risolleva l'eccezione per la gestione a livello superiore
+        # Re-raise the exception for higher-level handling
         raise ValueError(error_message) from e
 
 
 def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file=None, wind_speed_file=None, wind_direction_file=None):
     """
-    Genera un file di configurazione WindNinja forecast a partire dai dati JSON
+    Generate a WindNinja forecast configuration file from JSON data
 
     Args:
-        json_data (dict): Dati JSON per la configurazione
-        data_dir (str): Directory base per i dati di output
-        model_id (str, optional): ID del modello, se non fornito viene preso dal JSON
-        elevation_file (str, optional): Percorso locale del file di elevazione, se già scaricato
-        wind_speed_file (str, optional): Percorso locale del file di velocità del vento, se già scaricato
-        wind_direction_file (str, optional): Percorso locale del file di direzione del vento, se già scaricato
+        json_data (dict): JSON data for configuration
+        data_dir (str): Base directory for output data
+        model_id (str, optional): Model ID, if not provided it will be taken from the JSON
+        elevation_file (str, optional): Local path to the elevation file, if already downloaded
+        wind_speed_file (str, optional): Local path to the wind speed file, if already downloaded
+        wind_direction_file (str, optional): Local path to the wind direction file, if already downloaded
 
     Returns:
-        str: Percorso del file di configurazione generato
+        str: Path to the generated configuration file
     """
-    logger.info("Generazione file di configurazione WindNinja forecast")
+    logger.info("Generating WindNinja forecast configuration file")
     logger.debug(
-        f"Parametri: data_dir={data_dir}, model_id={model_id}, elevation_file={elevation_file}, wind_speed_file={wind_speed_file}, wind_direction_file={wind_direction_file}")
+        f"Parameters: data_dir={data_dir}, model_id={model_id}, elevation_file={elevation_file}, wind_speed_file={wind_speed_file}, wind_direction_file={wind_direction_file}")
 
     try:
-        # Estrai model_id dal JSON se non specificato
+        # Extract model_id from JSON if not specified
         if model_id is None:
             model_id = json_data.get('modelId')
-            logger.debug(f"Model ID estratto dal JSON: {model_id}")
+            logger.debug(f"Model ID extracted from JSON: {model_id}")
             if not model_id:
-                logger.error("Impossibile trovare modelId nel JSON")
+                logger.error("Unable to find modelId in JSON")
                 raise ValueError(
-                    "modelId non trovato nel JSON e non specificato come parametro")
+                    "modelId not found in JSON and not specified as parameter")
 
-        # Crea le directory di input e output
+        # Create input and output directories
         input_dir = os.path.join(data_dir, model_id, "input")
         output_dir = os.path.join(data_dir, model_id, "output")
         os.makedirs(input_dir, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
         logger.debug(
-            f"Directory create: input={input_dir}, output={output_dir}")
+            f"Directories created: input={input_dir}, output={output_dir}")
 
-        # Se non è stato specificato il file di elevazione, scaricalo da MinIO
+        # If the elevation file is not specified, download it from MinIO
         if not elevation_file and 'elevation_file' in json_data:
             elevation_file_path = json_data.get('elevation_file')
             logger.debug(
-                f"File elevazione da scaricare: {elevation_file_path}")
+                f"Elevation file to download: {elevation_file_path}")
             elevation_file = download_file_from_minio(
                 elevation_file_path,
                 input_dir,
                 model_id
             )
-            logger.debug(f"File elevazione scaricato: {elevation_file}")
+            logger.debug(f"Elevation file downloaded: {elevation_file}")
         elif not elevation_file:
             logger.error(
-                "File di elevazione non specificato e non presente nel JSON")
+                "Elevation file not specified and not present in JSON")
             raise ValueError(
-                "File di elevazione non specificato e non presente nel JSON")
+                "Elevation file not specified and not present in JSON")
 
-        # Se non è stato specificato il file di velocità del vento, scaricalo da MinIO
+        # If the wind speed file is not specified, download it from MinIO
         if not wind_speed_file and 'wind_speed_file' in json_data:
             wind_speed_file_path = json_data.get('wind_speed_file')
             logger.debug(
-                f"File velocità del vento da scaricare: {wind_speed_file_path}")
+                f"Wind speed file to download: {wind_speed_file_path}")
             wind_speed_file = download_file_from_minio(
                 wind_speed_file_path,
                 input_dir,
                 model_id
             )
-            logger.debug(f"File velocità del vento scaricato: {wind_speed_file}")
+            logger.debug(f"Wind speed file downloaded: {wind_speed_file}")
         
-        # Se non è stato specificato il file di direzione del vento, scaricalo da MinIO
+        # If the wind direction file is not specified, download it from MinIO
         if not wind_direction_file and 'wind_direction_file' in json_data:
             wind_direction_file_path = json_data.get('wind_direction_file')
             logger.debug(
-                f"File direzione del vento da scaricare: {wind_direction_file_path}")
+                f"Wind direction file to download: {wind_direction_file_path}")
             wind_direction_file = download_file_from_minio(
                 wind_direction_file_path,
                 input_dir,
                 model_id
             )
-            logger.debug(f"File direzione del vento scaricato: {wind_direction_file}")
+            logger.debug(f"Wind direction file downloaded: {wind_direction_file}")
 
-        # Percorso del file di configurazione da generare
+        # Path of the configuration file to generate
         config_file_path = os.path.join(input_dir, f"{model_id}_windninja_forecast.cfg")
-        logger.debug(f"Percorso file di configurazione: {config_file_path}")
+        logger.debug(f"Configuration file path: {config_file_path}")
 
-        # Estrai e splitta il simulation_time
+        # Extract and split simulation_time
         simulation_time = json_data.get('simulation_time', '')
         logger.debug(f"Simulation time: {simulation_time}")
         
-        # Formatto come "2024-04-28T15:30"
+        # Format as "2024-04-28T15:30"
         try:
-            # Estrai le componenti della data e ora dal formato ISO
+            # Extract date and time components from ISO format
             from datetime import datetime
             dt = datetime.fromisoformat(simulation_time)
             year = dt.year
@@ -222,22 +222,22 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             day = dt.day
             hour = dt.hour
             minute = dt.minute
-            logger.debug(f"Componenti temporali estratte: year={year}, month={month}, day={day}, hour={hour}, minute={minute}")
+            logger.debug(f"Time components extracted: year={year}, month={month}, day={day}, hour={hour}, minute={minute}")
         except Exception as e:
-            logger.warning(f"Errore nel parsing della data simulation_time '{simulation_time}': {str(e)}")
-            # Valori di default in caso di errore
+            logger.warning(f"Error parsing simulation_time date '{simulation_time}': {str(e)}")
+            # Default values in case of error
             year = datetime.now().year
             month = datetime.now().month
             day = datetime.now().day
             hour = datetime.now().hour
             minute = datetime.now().minute
-            logger.debug(f"Utilizzando valori di default: year={year}, month={month}, day={day}, hour={hour}, minute={minute}")
+            logger.debug(f"Using default values: year={year}, month={month}, day={day}, hour={hour}, minute={minute}")
 
-        # Crea il contenuto del file di configurazione
-        logger.debug("Creazione contenuto file di configurazione")
+        # Create the configuration file content
+        logger.debug("Creating configuration file content")
         config_content = [
             "#",
-            "#\tFile di configurazione WindNinja forecast generato automaticamente",
+            "#\tAutomatically generated WindNinja forecast configuration file",
             "#",
             f"num_threads              = 4",
             f"elevation_file           = {elevation_file}",
@@ -272,114 +272,114 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             f"write_farsite_atm        = false"
         ]
 
-        # Scrivi il file di configurazione
-        logger.debug(f"Scrittura file di configurazione: {config_file_path}")
+        # Write the configuration file
+        logger.debug(f"Writing configuration file: {config_file_path}")
         with open(config_file_path, 'w') as config_file:
             config_file.write('\n'.join(config_content))
 
         logger.info(
-            f"File di configurazione WindNinja generato: {config_file_path}")
+            f"WindNinja configuration file generated: {config_file_path}")
         return config_file_path
 
     except Exception as e:
         logger.error(
-            f"Errore nella generazione del file di configurazione WindNinja: {str(e)}")
+            f"Error generating WindNinja configuration file: {str(e)}")
         raise
 
 
 def process_windninja_input(json_filepath, data_dir, model_id=None):
     """
-    Elabora i dati di input per WindNinja: genera i file CSV delle stazioni,
-    scarica il file di elevazione e crea il file di configurazione
+    Process input data for WindNinja: generate CSV station files,
+    download the elevation file and create the configuration file
 
     Args:
-        json_filepath (str or dict): Percorso del file JSON o dizionario JSON già caricato
-        data_dir (str): Directory base per i dati di output
-        model_id (str, optional): ID del modello, se non fornito viene preso dal JSON
+        json_filepath (str or dict): Path to the JSON file or already loaded JSON dictionary
+        data_dir (str): Base directory for output data
+        model_id (str, optional): Model ID, if not provided it will be taken from the JSON
 
     Returns:
         tuple: (model_id, csv_files, elevation_file, config_file)
     """
-    logger.info(f"Elaborazione dati di input WindNinja da {json_filepath}")
-    logger.debug(f"Parametri: data_dir={data_dir}, model_id={model_id}")
+    logger.info(f"Processing WindNinja input data from {json_filepath}")
+    logger.debug(f"Parameters: data_dir={data_dir}, model_id={model_id}")
 
     try:
-        # Leggi il JSON se è stato fornito un filepath, altrimenti assumiamo che sia già stato caricato
+        # Read the JSON if a filepath was provided, otherwise assume it's already loaded
         if isinstance(json_filepath, (str, Path)):
-            logger.debug(f"Apertura file JSON da percorso: {json_filepath}")
+            logger.debug(f"Opening JSON file from path: {json_filepath}")
             with open(json_filepath, 'r') as jsonfile:
                 json_data = json.load(jsonfile)
         else:
-            logger.debug("Elaborazione dati JSON già caricati in memoria")
+            logger.debug("Processing JSON data already loaded in memory")
             json_data = json_filepath
             json_filepath = "input JSON data"
 
-        # Estrai model_id dal JSON se non specificato
+        # Extract model_id from JSON if not specified
         if model_id is None:
             model_id = json_data.get('modelId')
-            logger.debug(f"Model ID estratto dal JSON: {model_id}")
+            logger.debug(f"Model ID extracted from JSON: {model_id}")
             if not model_id:
-                logger.error("Impossibile trovare modelId nel JSON")
+                logger.error("Unable to find modelId in JSON")
                 raise ValueError(
-                    "modelId non trovato nel JSON e non specificato come parametro")
+                    "modelId not found in JSON and not specified as parameter")
 
-        # Crea le directory di input e output
+        # Create input and output directories
         input_dir = os.path.join(data_dir, model_id, "input")
         output_dir = os.path.join(data_dir, model_id, "output")
         logger.debug(
-            f"Creazione directory: input={input_dir}, output={output_dir}")
+            f"Creating directories: input={input_dir}, output={output_dir}")
         os.makedirs(input_dir, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
 
-        # Scarica il file di elevazione da MinIO
+        # Download the elevation file from MinIO
         elevation_file = None
         if 'elevation_file' in json_data:
             logger.debug(
-                f"Avvio download file elevazione: {json_data['elevation_file']}")
+                f"Starting elevation file download: {json_data['elevation_file']}")
             elevation_file = download_file_from_minio(
                 json_data['elevation_file'],
                 input_dir,
                 model_id,
-                file_type="elevazione",
+                file_type="elevation",
             )
-            logger.debug(f"File elevazione scaricato: {elevation_file}")
+            logger.debug(f"Elevation file downloaded: {elevation_file}")
         else:
-            logger.debug("Nessun file di elevazione specificato nel JSON")
+            logger.debug("No elevation file specified in JSON")
 
         wind_speed_file = None
         if 'wind_speed_file' in json_data:
             logger.debug(
-                f"Avvio download file velocità del vento: {json_data['wind_speed_file']}")
+                f"Starting wind speed file download: {json_data['wind_speed_file']}")
             wind_speed_file = download_file_from_minio(
                 json_data['wind_speed_file'],
                 input_dir,
                 model_id,
-                file_type="velocità del vento",
+                file_type="wind speed",
             )
             logger.debug(
-                f"File velocità del vento scaricato: {wind_speed_file}")
+                f"Wind speed file downloaded: {wind_speed_file}")
         else:
             logger.debug(
-                "Nessun file di velocità del vento specificato nel JSON")
+                "No wind speed file specified in JSON")
 
         wind_direction_file = None
         if 'wind_direction_file' in json_data:
             logger.debug(
-                f"Avvio download file direzione del vento: {json_data['wind_direction_file']}")
+                f"Starting wind direction file download: {json_data['wind_direction_file']}")
             wind_direction_file = download_file_from_minio(
                 json_data['wind_direction_file'],
                 input_dir,
                 model_id,
-                file_type="direzione del vento",
+                file_type="wind direction",
             )
             logger.debug(
-                f"File direzione del vento scaricato: {wind_direction_file}")
+                f"Wind direction file downloaded: {wind_direction_file}")
         else:
             logger.debug(
-                "Nessun file di direzione del vento specificato nel JSON")
+                "No wind direction file specified in JSON")
 
-        # Genera il file di configurazione WindNinja
-        logger.debug("Avvio generazione file configurazione WindNinja")
+        # Generate the WindNinja configuration file
+        logger.debug("Starting WindNinja configuration file generation")
         config_file = generate_windninja_config(
             json_data,
             data_dir,
@@ -388,12 +388,12 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
             wind_speed_file=wind_speed_file,
             wind_direction_file=wind_direction_file
         )
-        logger.debug(f"File configurazione generato: {config_file}")
+        logger.debug(f"Configuration file generated: {config_file}")
 
-        logger.info(f"Elaborazione completata per il modello {model_id}")
+        logger.info(f"Processing completed for model {model_id}")
         return model_id, elevation_file, wind_speed_file, wind_direction_file, config_file
 
     except Exception as e:
         logger.error(
-            f"Errore nell'elaborazione dei dati di input WindNinja: {str(e)}")
+            f"Error processing WindNinja input data: {str(e)}")
         raise
