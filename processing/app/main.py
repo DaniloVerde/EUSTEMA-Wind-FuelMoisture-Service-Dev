@@ -54,8 +54,8 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app with lifespan context manager
 app = FastAPI(
-    title="CU6.7 Processing API",
-    description="API for running CU6.7 processing tasks",
+    title="Wind and Fuel Moisture service API",
+    description="API for running Wind and Fuel Moisture processing tasks",
     version="1.0.0",
     debug=DEBUG,
     lifespan=lifespan  # Use the lifespan context manager
@@ -78,7 +78,7 @@ async def health_check():
     """
     Health check endpoint.
     
-    This endpoint is used to verify the health and availability of the CU6.8 Processing API.
+    This endpoint is used to verify the health and availability of the service API.
     
     Returns:
         HealthCheckResponse: A JSON response containing the status and service information.
@@ -97,16 +97,3 @@ async def health_check():
         version=app.version,
         uptime=uptime_str
     )
-
-# Elimina i vecchi decoratori @app.on_event poiché ora sono gestiti da lifespan
-# @app.on_event("startup")
-# async def startup_event():
-#     ...
-
-# @app.on_event("shutdown")
-# async def shutdown_event():
-#     ...
-
-# if __name__ == "__main__":
-#     logger.info(f"Starting server on 0.0.0.0:8000 with reload={DEBUG}")
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=DEBUG)
