@@ -7,26 +7,26 @@ from pathlib import Path
 from app.windninja.runner import run_windninja
 
 class TestWindNinjaRunner(unittest.TestCase):
-    """Test per il runner di WindNinja."""
+    """Test for the WindNinja runner."""
     
     def setUp(self):
-        """Inizializza le variabili per i test."""
+        """Initialize variables for tests."""
         self.test_config = "test_config.cfg"
         self.test_working_dir = "/tmp/test_dir"
     
     @patch('app.windninja.runner.subprocess.Popen')
     def test_run_windninja_success(self, mock_popen):
-        """Testa l'esecuzione di WindNinja con successo."""
-        # Configura il mock
+        """Test the successful execution of WindNinja."""
+        # Configure the mock
         process_mock = MagicMock()
-        process_mock.communicate.return_value = ("Output di successo", "")
+        process_mock.communicate.return_value = ("Success output", "")
         process_mock.returncode = 0
         mock_popen.return_value = process_mock
         
-        # Esegui la funzione
+        # Execute the function
         exit_code, stdout, stderr = run_windninja(self.test_config, self.test_working_dir)
         
-        # Verifica che subprocess.Popen sia stato chiamato correttamente
+        # Verify that subprocess.Popen was called correctly
         mock_popen.assert_called_once_with(
             ["WindNinja_cli", "--config_file", self.test_config],
             stdout=unittest.mock.ANY,
@@ -35,44 +35,44 @@ class TestWindNinjaRunner(unittest.TestCase):
             cwd=self.test_working_dir
         )
         
-        # Verifica l'output
+        # Verify the output
         self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, "Output di successo")
+        self.assertEqual(stdout, "Success output")
         self.assertEqual(stderr, "")
     
     @patch('app.windninja.runner.subprocess.Popen')
     def test_run_windninja_failure(self, mock_popen):
-        """Testa l'esecuzione di WindNinja con fallimento."""
-        # Configura il mock
+        """Test the failure execution of WindNinja."""
+        # Configure the mock
         process_mock = MagicMock()
-        process_mock.communicate.return_value = ("", "Errore durante l'esecuzione")
+        process_mock.communicate.return_value = ("", "Error during execution")
         process_mock.returncode = 1
         mock_popen.return_value = process_mock
         
-        # Esegui la funzione
+        # Execute the function
         exit_code, stdout, stderr = run_windninja(self.test_config, self.test_working_dir)
         
-        # Verifica l'output
+        # Verify the output
         self.assertEqual(exit_code, 1)
         self.assertEqual(stdout, "")
-        self.assertEqual(stderr, "Errore durante l'esecuzione")
+        self.assertEqual(stderr, "Error during execution")
     
     @patch('app.windninja.runner.subprocess.Popen')
     def test_run_windninja_timeout(self, mock_popen):
-        """Testa il timeout durante l'esecuzione di WindNinja."""
-        # Configura il mock per generare un'eccezione di timeout
+        """Test timeout during the execution of WindNinja."""
+        # Configure the mock to generate a timeout exception
         process_mock = MagicMock()
         process_mock.communicate.side_effect = subprocess.TimeoutExpired(cmd="WindNinja_cli", timeout=10)
         process_mock.kill = MagicMock()
         mock_popen.return_value = process_mock
         
-        # Esegui la funzione con un timeout
+        # Execute the function with a timeout
         exit_code, stdout, stderr = run_windninja(self.test_config, self.test_working_dir, timeout=10)
         
-        # Verifica che il processo sia stato terminato
+        # Verify that the process was terminated
         process_mock.kill.assert_called_once()
         
-        # Verifica l'output
+        # Verify the output
         self.assertEqual(exit_code, -1)
         self.assertEqual(stdout, "")
         self.assertEqual(stderr, "Timeout expired")

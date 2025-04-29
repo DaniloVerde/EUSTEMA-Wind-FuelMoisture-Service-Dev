@@ -4,72 +4,72 @@ import unittest
 import requests
 from unittest.mock import patch, MagicMock
 
-# Rimuoviamo l'import del TestClient di FastAPI poiché useremo requests
+# We remove the import of FastAPI's TestClient since we'll use requests
 # from fastapi.testclient import TestClient
 
-# Manteniamo l'import dell'app solo per riferimento, non lo useremo direttamente
+# We keep the app import only for reference, we won't use it directly
 from app.main import app
 from app.api.models import WindNinjaRequest, ProcessingResponse
 from app.api.tasks import process_windninja_request
 
-# Configurazione dell'URL dell'endpoint
+# Configuration of the endpoint URL
 API_BASE_URL = "http://localhost:8000"
 
 class TestProcessingEndpoint(unittest.TestCase):
-    """Test per l'endpoint di elaborazione WindNinja."""
+    """Tests for the WindNinja processing endpoint."""
     
     def setUp(self):
-        """Inizializza il payload di esempio."""
-        # Rimuoviamo l'inizializzazione del client TestClient
+        """Initialize the example payload."""
+        # We remove the initialization of the TestClient
         # self.client = TestClient(app)
         
-        # Carica il JSON di esempio
+        # Load the example JSON
         test_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "test_data")
         json_file = os.path.join(test_data_dir, "input", "station_list.json")
         
         with open(json_file, 'r') as f:
             self.test_payload = json.load(f)
     
-    # Rimuoviamo il patch su process_windninja_request perché non possiamo mockare
-    # funzioni all'interno del container che stiamo testando
+    # We remove the patch on process_windninja_request because we can't mock
+    # functions inside the container we're testing
     def test_process_windninja_endpoint(self):
-        """Testa che l'endpoint restituisca 202 Accepted e avvii l'elaborazione in background."""
-        # Esegui la richiesta POST usando requests
+        """Test that the endpoint returns 202 Accepted and starts background processing."""
+        # Execute the POST request using requests
         response = requests.post(f"{API_BASE_URL}/api/v1/process", json=self.test_payload)
         
-        # Verifica che la risposta sia 202 Accepted
+        # Verify that the response is 202 Accepted
         self.assertEqual(response.status_code, 202)
         
-        # Verifica il contenuto della risposta
+        # Verify the response content
         response_data = response.json()
         self.assertEqual(response_data["modelId"], self.test_payload["modelId"])
         self.assertEqual(response_data["status"], "accepted")
         self.assertIn("Processing started", response_data["message"])
     
     def test_malformed_request(self):
-        """Testa che l'endpoint gestisca correttamente le richieste malformate."""
-        # Crea un payload malformato (mancano le stazioni)
+        """Test that the endpoint correctly handles malformed requests."""
+        # Create a malformed payload (missing stations)
         malformed_payload = {
             "modelId": "test123",
             "elevation_file": "input/test.tif"
-            # Manca meteorological_stations che è obbligatorio
+            # Missing meteorological_stations which is required
         }
         
-        # Esegui la richiesta POST usando requests
+        # Execute the POST request using requests
         response = requests.post(f"{API_BASE_URL}/api/v1/process", json=malformed_payload)
         
-        # Verifica che la risposta sia 422 Unprocessable Entity (errore di validazione)
+        # Verify that the response is 422 Unprocessable Entity (validation error)
         self.assertEqual(response.status_code, 422)
 
 
-# Manteniamo la classe TestProcessingTasks invariata poiché testa le funzioni 
-# direttamente e non attraverso gli endpoint HTTP
+# We keep the TestProcessingTasks class unchanged since it tests functions
+# directly and not through HTTP endpoints
 class TestProcessingTasks(unittest.TestCase):
-    """Test per le attività di elaborazione in background."""
+    """Tests for background processing tasks."""
     
     def setUp(self):
-        """Inizializza il payload di esempio."""
-        # Carica il JSON di esempio
+        """Initialize the example payload."""
+        # Load the example JSON
         test_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "test_data")
         json_file = os.path.join(test_data_dir, "input", "station_list.json")
         
@@ -83,8 +83,8 @@ class TestProcessingTasks(unittest.TestCase):
     @patch('app.api.tasks.run_windninja')
     @patch('app.api.tasks.MinioClient')
     def test_process_windninja_request_success(self, mock_minio, mock_run, mock_process_input, mock_kafka):
-        """Testa il flusso di successo dell'elaborazione WindNinja."""
-        # Configura i mock per simulare un'esecuzione riuscita
+        """Test the successful flow of WindNinja processing."""
+        # Configure mocks to simulate a successful execution
         mock_kafka_instance = MagicMock()
         mock_kafka.return_value = mock_kafka_instance
         
@@ -95,37 +95,37 @@ class TestProcessingTasks(unittest.TestCase):
             "/tmp/config.cfg"
         )
         
-        mock_run.return_value = (0, "Standard output", "")  # exit_code 0 = successo
+        mock_run.return_value = (0, "Standard output", "")  # exit_code 0 = success
         
         mock_minio_instance = MagicMock()
         mock_minio.return_value = mock_minio_instance
         
-        # Esegui la funzione di elaborazione
+        # Execute the processing function
         process_windninja_request(self.model_id, self.test_payload)
         
-        # Verifica che i messaggi di progresso siano stati inviati
+        # Verify that progress messages were sent
         self.assertTrue(mock_kafka_instance.send_simulation_progress.called)
-        # Aggiorniamo l'aspettativa a 6 chiamate invece di 5
-        self.assertEqual(mock_kafka_instance.send_simulation_progress.call_count, 6)  # Probabilmente: 0%, 10%, 30%, 50%, 70%, 90%
+        # Update expectation to 6 calls instead of 5
+        self.assertEqual(mock_kafka_instance.send_simulation_progress.call_count, 6)  # Probably: 0%, 10%, 30%, 50%, 70%, 90%
         
-        # Verifica che il messaggio di completamento sia stato inviato
+        # Verify that completion message was sent
         mock_kafka_instance.send_simulation_complete.assert_called_once()
         
-        # Verifica che non ci siano stati messaggi di errore
+        # Verify that no error messages were sent
         mock_kafka_instance.send_simulation_failed.assert_not_called()
         
-        # Verifica che WindNinja sia stato eseguito
+        # Verify that WindNinja was executed
         mock_run.assert_called_once()
         
-        # Verifica che i risultati siano stati caricati su MinIO
+        # Verify that results were uploaded to MinIO
         # self.assertTrue(mock_minio_instance.upload_file.called)
     
     @patch('app.api.tasks.KafkaMessageProducer')
     @patch('app.api.tasks.process_windninja_input')
     @patch('app.api.tasks.run_windninja')
     def test_process_windninja_request_run_failure(self, mock_run, mock_process_input, mock_kafka):
-        """Testa il caso in cui l'esecuzione di WindNinja fallisca."""
-        # Configura i mock per simulare un fallimento nell'esecuzione di WindNinja
+        """Test the case where WindNinja execution fails."""
+        # Configure mocks to simulate a failure in WindNinja execution
         mock_kafka_instance = MagicMock()
         mock_kafka.return_value = mock_kafka_instance
         
@@ -136,38 +136,38 @@ class TestProcessingTasks(unittest.TestCase):
             "/tmp/config.cfg"
         )
         
-        mock_run.return_value = (1, "", "Error: simulation failed")  # exit_code 1 = errore
+        mock_run.return_value = (1, "", "Error: simulation failed")  # exit_code 1 = error
         
-        # Esegui la funzione di elaborazione
+        # Execute the processing function
         process_windninja_request(self.model_id, self.test_payload)
         
-        # Verifica che sia stato inviato un messaggio di errore
-        # Non controlliamo più il numero esatto di chiamate
+        # Verify that an error message was sent
+        # We no longer check the exact number of calls
         self.assertTrue(mock_kafka_instance.send_simulation_failed.called)
         
-        # Verifica che il messaggio di completamento non sia stato inviato
+        # Verify that completion message was not sent
         mock_kafka_instance.send_simulation_complete.assert_not_called()
         
     @patch('app.api.tasks.KafkaMessageProducer')
     @patch('app.api.tasks.process_windninja_input')
     def test_process_windninja_request_input_error(self, mock_process_input, mock_kafka):
-        """Testa il caso in cui si verifichi un errore nell'elaborazione dei dati di input."""
-        # Configura i mock per simulare un errore nell'elaborazione degli input
+        """Test the case where an error occurs during input data processing."""
+        # Configure mocks to simulate an error in processing inputs
         mock_kafka_instance = MagicMock()
         mock_kafka.return_value = mock_kafka_instance
         
-        # Simula un'eccezione durante l'elaborazione degli input
+        # Simulate an exception during input processing
         mock_process_input.side_effect = Exception("Error processing input data")
         
-        # Esegui la funzione di elaborazione e verifica che l'eccezione venga gestita
+        # Execute the processing function and verify that the exception is handled
         with self.assertRaises(Exception):
             process_windninja_request(self.model_id, self.test_payload)
         
-        # Verifica che sia stato inviato un messaggio di errore
-        # Non controlliamo più il numero esatto di chiamate
+        # Verify that an error message was sent
+        # We no longer check the exact number of calls
         self.assertTrue(mock_kafka_instance.send_simulation_failed.called)
         
-        # Verifica che il messaggio di completamento non sia stato inviato
+        # Verify that completion message was not sent
         mock_kafka_instance.send_simulation_complete.assert_not_called()
 
 if __name__ == '__main__':

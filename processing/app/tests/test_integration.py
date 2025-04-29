@@ -13,15 +13,15 @@ from app.storage.minio_client import MinioClient
 from app.messaging.kafka_producer import KafkaMessageProducer
 from app.windninja.runner import run_windninja
 
-# Configurazione dell'URL di base per l'API
+# Configuration of the base URL for the API
 API_BASE_URL = "http://localhost:8000"
 
 class TestIntegrationProcessing(unittest.TestCase):
-    """Test di integrazione per il processo di elaborazione WindNinja."""
+    """Integration tests for the WindNinja processing workflow."""
     
     def setUp(self):
-        """Inizializza il payload di esempio e prepara i dati di test."""
-        # Carica il JSON di esempio
+        """Initialize the example payload and prepare test data."""
+        # Load the example JSON
         test_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "test_data")
         json_file = os.path.join(test_data_dir, "input", "station_list.json")
         
@@ -30,23 +30,23 @@ class TestIntegrationProcessing(unittest.TestCase):
         
         self.model_id = self.test_payload["modelId"]
         
-        # Crea una directory temporanea per i test
+        # Create a temporary directory for tests
         self.test_data_dir = tempfile.mkdtemp()
         
-        # Crea le directory di input e output
+        # Create input and output directories
         self.input_dir = os.path.join(self.test_data_dir, self.model_id, "input")
         self.output_dir = os.path.join(self.test_data_dir, self.model_id, "output")
         os.makedirs(self.input_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
         
-        # Crea un file di elevazione fittizio
+        # Create a dummy elevation file
         self.elevation_file = os.path.join(self.input_dir, "w46575_s10.tif")
         with open(self.elevation_file, 'w') as f:
             f.write("Test elevation file content")
     
     def tearDown(self):
-        """Pulisce le risorse create durante i test."""
-        # Rimuovi la directory temporanea
+        """Clean up resources created during tests."""
+        # Remove the temporary directory
         shutil.rmtree(self.test_data_dir, ignore_errors=True)
     
     @patch('app.windninja.input_generator.download_elevation_file_from_minio')
@@ -55,16 +55,16 @@ class TestIntegrationProcessing(unittest.TestCase):
     @patch('app.messaging.kafka_producer.KafkaProducer')
     def test_full_processing_flow(self, mock_kafka_producer, mock_minio, mock_run_windninja, mock_download):
         """
-        Testa l'intero flusso di elaborazione dall'endpoint API fino al completamento.
-        Questo test simula l'intero processo, intercettando le chiamate ai servizi esterni.
+        Test the entire processing flow from the API endpoint to completion.
+        This test simulates the entire process, intercepting calls to external services.
         """
-        # Configura i mock
+        # Configure the mocks
         mock_download.return_value = self.elevation_file
         
-        # Simula l'esecuzione di WindNinja con successo
+        # Simulate successful execution of WindNinja
         mock_run_windninja.return_value = (0, "WindNinja output", "")
         
-        # Crea alcuni file di output fittizi
+        # Create some dummy output files
         output_files = [
             os.path.join(self.output_dir, "output_wind_1.asc"),
             os.path.join(self.output_dir, "output_wind_2.asc"),
@@ -74,48 +74,48 @@ class TestIntegrationProcessing(unittest.TestCase):
             with open(file, 'w') as f:
                 f.write("Test output content")
         
-        # Configura il mock di MinioClient
+        # Configure the MinioClient mock
         mock_minio_instance = MagicMock()
         mock_minio.return_value = mock_minio_instance
         
-        # Configura il mock di KafkaProducer
+        # Configure the KafkaProducer mock
         mock_kafka_instance = MagicMock()
         mock_kafka_producer_instance = MagicMock()
         mock_kafka_producer.return_value = mock_kafka_producer_instance
         mock_kafka_producer_instance.send.return_value.get.return_value = MagicMock()
         
-        # Esegui la richiesta POST all'endpoint usando requests invece di TestClient
+        # Execute the POST request to the endpoint using requests instead of TestClient
         with patch('app.api.tasks.DATA_DIR', self.test_data_dir):
             response = requests.post(f"{API_BASE_URL}{API_PREFIX}/process", json=self.test_payload)
         
-        # Verifica che la risposta sia 202 Accepted
+        # Verify that the response is 202 Accepted
         self.assertEqual(response.status_code, 202)
         
-        # Verifica il contenuto della risposta
+        # Verify the response content
         response_data = response.json()
         self.assertEqual(response_data["modelId"], self.model_id)
         self.assertEqual(response_data["status"], "accepted")
         
-        # Attualmente non possiamo testare completamente il flusso asincrono,
-        # ma possiamo verificare che i componenti siano stati chiamati correttamente
-        # quando eseguiamo direttamente la funzione di elaborazione
+        # Currently we can't fully test the asynchronous flow,
+        # but we can verify that the components were called correctly
+        # when we directly run the processing function
         
-        # Aggiungiamo un breve ritardo per dare tempo al server di iniziare l'elaborazione
+        # Add a short delay to give the server time to start processing
         time.sleep(1)
         
-        # Eseguiamo separatamente la funzione di elaborazione per verificare le chiamate ai mock
+        # Separately run the processing function to verify the mock calls
         with patch('app.api.tasks.DATA_DIR', self.test_data_dir):
             from app.api.tasks import process_windninja_request
             try:
                 process_windninja_request(self.model_id, self.test_payload)
                 
-                # Verifiche aggiuntive che sarebbero normalmente eseguite in background
+                # Additional verifications that would normally be executed in the background
                 mock_download.assert_called_once()
                 mock_run_windninja.assert_called_once()
                 self.assertTrue(mock_minio_instance.upload_file.called)
             except Exception as e:
-                # Catturiamo le eccezioni per questo test per non fallire l'intero test
-                print(f"Errore nell'elaborazione: {e}")
+                # Catch exceptions for this test to not fail the entire test
+                print(f"Error in processing: {e}")
     
     @patch('app.windninja.input_generator.download_elevation_file_from_minio')
     @patch('app.api.tasks.run_windninja')
@@ -123,48 +123,48 @@ class TestIntegrationProcessing(unittest.TestCase):
     @patch('app.messaging.kafka_producer.KafkaProducer')
     def test_processing_with_windninja_failure(self, mock_kafka_producer, mock_minio, mock_run_windninja, mock_download):
         """
-        Testa il flusso quando WindNinja fallisce.
+        Test the flow when WindNinja fails.
         """
-        # Configura i mock
+        # Configure the mocks
         mock_download.return_value = self.elevation_file
         
-        # Simula un fallimento di WindNinja
+        # Simulate a WindNinja failure
         mock_run_windninja.return_value = (1, "", "Error: simulation failed")
         
-        # Configura il mock di MinioClient
+        # Configure the MinioClient mock
         mock_minio_instance = MagicMock()
         mock_minio.return_value = mock_minio_instance
         
-        # Configura il mock di KafkaProducer
+        # Configure the KafkaProducer mock
         mock_kafka_instance = MagicMock()
         mock_kafka_producer_instance = MagicMock()
         mock_kafka_producer.return_value = mock_kafka_producer_instance
         mock_kafka_producer_instance.send.return_value.get.return_value = MagicMock()
         
-        # Esegui la richiesta POST all'endpoint usando requests invece di TestClient
+        # Execute the POST request to the endpoint using requests instead of TestClient
         with patch('app.api.tasks.DATA_DIR', self.test_data_dir):
             response = requests.post(f"{API_BASE_URL}{API_PREFIX}/process", json=self.test_payload)
         
-        # Verifica che la risposta sia 202 Accepted
+        # Verify that the response is 202 Accepted
         self.assertEqual(response.status_code, 202)
         
-        # Aggiungiamo un breve ritardo per dare tempo al server di iniziare l'elaborazione
+        # Add a short delay to give the server time to start processing
         time.sleep(1)
         
-        # Eseguiamo separatamente la funzione di elaborazione per verificare le chiamate ai mock
+        # Separately run the processing function to verify the mock calls
         with patch('app.api.tasks.DATA_DIR', self.test_data_dir):
             from app.api.tasks import process_windninja_request
             
-            # Esegui l'elaborazione
+            # Run the processing
             process_windninja_request(self.model_id, self.test_payload)
             
-            # WindNinja è stato chiamato
+            # WindNinja was called
             mock_run_windninja.assert_called_once()
             
-            # Verifica che non ci siano stati caricamenti su MinIO dopo il fallimento
+            # Verify that there were no uploads to MinIO after the failure
             mock_minio_instance.upload_file.assert_not_called()
             
-            # Verifica che sia stato inviato un messaggio di errore a Kafka
+            # Verify that an error message was sent to Kafka
             mock_kafka_instance = mock_kafka_producer.return_value
             self.assertTrue(mock_kafka_instance.send.called)
 
