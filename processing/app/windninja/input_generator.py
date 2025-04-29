@@ -1,9 +1,8 @@
 import os
 import json
 import logging
-import shutil
 from pathlib import Path
-from .utils import create_station_csv_from_json_file, json_to_station_csv
+from .utils import json_to_station_csv
 from ..storage.minio_client import MinioClient
 
 logger = logging.getLogger(__name__)

@@ -3,8 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
 import time
-import uvicorn
-import logging
 from contextlib import asynccontextmanager
 
 from .api.endpoints import router as api_router
