@@ -32,9 +32,9 @@ class KafkaMessageProducer:
         """
         try:
             message = {
-                "event_type": "simulation_complete",
+                "event_type": "simulation_complete", # replace with OK
                 "simulation_id": simulation_id,
-                "status": status,
+                "status": "OK",
                 "results_url": results_url,
                 "timestamp": datetime.now().isoformat()
             }
@@ -63,10 +63,12 @@ class KafkaMessageProducer:
             error_message: Description of the error that occurred
         """
         try:
+            # TODO: send the same structure of simulation_complete with "message" key for error message
             message = {
-                "event_type": "simulation_failed",
+                "event_type": "simulation_failed", # replace with KO
                 "simulation_id": simulation_id,
-                "error": error_message,
+                "status": "KO",
+                "message": error_message,
                 "timestamp": datetime.now().isoformat()
             }
             
