@@ -47,11 +47,11 @@ def process_windninja_request(model_id, json_data):
     
     try:
         # Send progress message: Starting
-        kafka_producer.send_simulation_progress(model_id, 0, "Starting WindNinja processing")
+        # kafka_producer.send_simulation_progress(model_id, 0, "Starting WindNinja processing")
         
         # Process input data
         logger.info(f"Processing input data for model {model_id}")
-        kafka_producer.send_simulation_progress(model_id, 10, "Processing input data")
+        # kafka_producer.send_simulation_progress(model_id, 10, "Processing input data")
         
         _, csv_files, elevation_file, config_file = process_windninja_input(json_data, DATA_DIR)
         
@@ -61,7 +61,7 @@ def process_windninja_request(model_id, json_data):
         os.makedirs(output_dir, exist_ok=True)
         
         # Send progress message: Input processed
-        kafka_producer.send_simulation_progress(model_id, 30, "Input data processed, running WindNinja")
+        # kafka_producer.send_simulation_progress(model_id, 30, "Input data processed, running WindNinja")
         
         # Run WindNinja with the generated configuration
         logger.info(f"Running WindNinja for model {model_id}")
@@ -75,7 +75,7 @@ def process_windninja_request(model_id, json_data):
             return
         
         # Send progress message: WindNinja completed
-        kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
+        # kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
         
         # Initialize MinIO client
         minio_client = MinioClient()
@@ -100,7 +100,7 @@ def process_windninja_request(model_id, json_data):
                 uploaded_files.append(minio_object_name)
         
         # Send progress message: Results uploaded
-        kafka_producer.send_simulation_progress(model_id, 90, "Results uploaded to storage")
+        # kafka_producer.send_simulation_progress(model_id, 90, "Results uploaded to storage")
         
         # Send completion message
         logger.info(f"Processing completed for model {model_id}")
@@ -108,7 +108,7 @@ def process_windninja_request(model_id, json_data):
         kafka_producer.send_simulation_complete(model_id, "completed", results_url)
         
         # Send progress message: Processing completed
-        kafka_producer.send_simulation_progress(model_id, 100, "Processing completed successfully")
+        # kafka_producer.send_simulation_progress(model_id, 100, "Processing completed successfully")
         
     except Exception as e:
         logger.error(f"Error in background processing for model {model_id}: {str(e)}")
@@ -136,11 +136,11 @@ def process_windninja_forecast_request(model_id, json_data):
     
     try:
         # Send progress message: Starting
-        kafka_producer.send_simulation_progress(model_id, 0, "Starting WindNinja forecast processing")
+        # kafka_producer.send_simulation_progress(model_id, 0, "Starting WindNinja forecast processing")
         
         # Process input data
         logger.info(f"Processing input data for model {model_id}")
-        kafka_producer.send_simulation_progress(model_id, 10, "Processing input data")
+        # kafka_producer.send_simulation_progress(model_id, 10, "Processing input data")
         
         _, elevation_file, wind_speed_file, wind_direction_file, config_file = process_forecast_input(json_data, DATA_DIR)
         
@@ -150,7 +150,7 @@ def process_windninja_forecast_request(model_id, json_data):
         os.makedirs(output_dir, exist_ok=True)
         
         # Send progress message: Input processed
-        kafka_producer.send_simulation_progress(model_id, 30, "Input data processed, running WindNinja")
+        # kafka_producer.send_simulation_progress(model_id, 30, "Input data processed, running WindNinja")
         
         # Run WindNinja with the generated configuration
         logger.info(f"Running WindNinja for model {model_id}")
@@ -164,7 +164,7 @@ def process_windninja_forecast_request(model_id, json_data):
             return
         
         # Send progress message: WindNinja completed
-        kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
+        # kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
         
         # Initialize MinIO client
         minio_client = MinioClient()
@@ -189,7 +189,7 @@ def process_windninja_forecast_request(model_id, json_data):
                 uploaded_files.append(minio_object_name)
         
         # Send progress message: Results uploaded
-        kafka_producer.send_simulation_progress(model_id, 90, "Results uploaded to storage")
+        # kafka_producer.send_simulation_progress(model_id, 90, "Results uploaded to storage")
         
         # Send completion message
         logger.info(f"Processing completed for model {model_id}")
@@ -197,7 +197,7 @@ def process_windninja_forecast_request(model_id, json_data):
         kafka_producer.send_simulation_complete(model_id, "completed", results_url)
         
         # Send progress message: Processing completed
-        kafka_producer.send_simulation_progress(model_id, 100, "Processing completed successfully")
+        # kafka_producer.send_simulation_progress(model_id, 100, "Processing completed successfully")
         
     except Exception as e:
         logger.error(f"Error in background processing for model {model_id}: {str(e)}")
