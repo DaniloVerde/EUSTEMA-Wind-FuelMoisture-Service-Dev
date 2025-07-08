@@ -11,10 +11,16 @@ from .models import (
     WindNinjaForecastRequest,
 )
 from .tasks import process_windninja_request, process_windninja_forecast_request
-from app.fuel_moisture.runner import process_fuel_moisture_data
+from ..cleanup.cleanup_simulations_data import CleanupSimulationsData
+from ..fuel_moisture.runner import process_fuel_moisture_data
+from ..config.settings import DATA_DIR
 
 # Get module logger
 logger = logging.getLogger(__name__)
+
+# Initialize cleanup utility
+cleanup_util = CleanupSimulationsData(
+    output_dir=DATA_DIR, keep_recent=3)
 
 router = APIRouter(tags=["Processing"])
 
@@ -56,6 +62,11 @@ async def process_windninja(request: WindNinjaRequest, background_tasks: Backgro
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to start processing: {str(e)}"
         )
+    finally:
+        try:
+            cleanup_util.remove_old_simulations()
+        except Exception as cleanup_err:
+            logger.error(f"Cleanup error: {cleanup_err}")
 
 
 @router.post("/fuel-moisture", response_model=FuelMoistureResponse)
@@ -104,6 +115,11 @@ async def calculate_fuel_moisture(request: FuelMoistureRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to calculate fuel moisture: {str(e)}"
         )
+    finally:
+        try:
+            cleanup_util.remove_old_simulations()
+        except Exception as cleanup_err:
+            logger.error(f"Cleanup error: {cleanup_err}")
 
 
 @router.post("/forecast", status_code=status.HTTP_202_ACCEPTED, response_model=ProcessingResponse)
@@ -143,3 +159,8 @@ async def process_windninja_forecast(request: WindNinjaForecastRequest, backgrou
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to start processing: {str(e)}"
         )
+    finally:
+        try:
+            cleanup_util.remove_old_simulations()
+        except Exception as cleanup_err:
+            logger.error(f"Cleanup error: {cleanup_err}")
