@@ -6,7 +6,6 @@ import time
 from contextlib import asynccontextmanager
 
 from .api.endpoints import router as api_router
-from .config.settings import API_PREFIX, DEBUG
 from .config.logging_config import setup_logging
 
 from .config import settings
@@ -55,8 +54,10 @@ app = FastAPI(
     title="Wind and Fuel Moisture service API",
     description="API for running Wind and Fuel Moisture processing tasks",
     version="1.0.0",
-    debug=DEBUG,
-    lifespan=lifespan  # Use the lifespan context manager
+    debug=settings.DEBUG,
+    lifespan=lifespan,  # Use the lifespan context manager
+    root_path=settings.ROOT_PATH,
+    docs_url="/api-docs",      # Custom Swagger UI path
 )
 
 # Add CORS middleware
@@ -69,7 +70,7 @@ app.add_middleware(
 )
 
 # Include API routes
-app.include_router(api_router, prefix=API_PREFIX)
+app.include_router(api_router)
 
 @app.get("/", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check():

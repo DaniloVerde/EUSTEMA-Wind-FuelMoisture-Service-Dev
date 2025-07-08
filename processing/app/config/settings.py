@@ -1,7 +1,8 @@
 import os
 
 # API settings
-API_PREFIX = "/api/v1"
+ROOT_PATH = os.getenv("ROOT_PATH", "/")
+DOCS_URL = os.getenv("DOCS_URL", "/docs")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # MinIO settings
