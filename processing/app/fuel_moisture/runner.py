@@ -156,10 +156,12 @@ def sort_observations_by_datetime(observations: List[Dict[str, Any]]) -> List[Di
     Returns:
         Sorted list of observations
     """
-    return sorted(
-        observations,
-        key=lambda obs: datetime.fromisoformat(obs["date_time"])
-    )
+    def get_dt(obs):
+        dt = obs["date_time"]
+        if isinstance(dt, str):
+            return datetime.fromisoformat(dt)
+        return dt  # already a datetime object
+    return sorted(observations, key=get_dt)
 
 
 def process_station_data(station: Dict[str, Any]) -> Tuple[str, float]:
