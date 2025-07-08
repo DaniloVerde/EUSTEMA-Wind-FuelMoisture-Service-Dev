@@ -1,4 +1,4 @@
-FROM minio/minio:latest
+FROM minio/minio:RELEASE.2025-04-22T22-12-26Z
 
 EXPOSE 9000
 EXPOSE 9001
