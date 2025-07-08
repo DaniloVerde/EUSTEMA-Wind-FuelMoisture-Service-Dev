@@ -2,7 +2,11 @@ import json
 from datetime import datetime
 from kafka import KafkaProducer
 from ..config import get_logger
-from ..config.settings import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC
+from ..config.settings import (
+    KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, KAFKA_SECURITY_PROTOCOL,
+    KAFKA_SASL_MECHANISM, KAFKA_USERNAME, KAFKA_PASSWORD,
+    KAFKA_SESSION_TIMEOUT_MS, KAFKA_REQUEST_TIMEOUT_MS
+)
 
 # Get module logger
 logger = get_logger(__name__)
@@ -11,10 +15,19 @@ class KafkaMessageProducer:
     def __init__(self):
         logger.info(f"Initializing Kafka producer with bootstrap servers: {KAFKA_BOOTSTRAP_SERVERS}")
         try:
-            self.producer = KafkaProducer(
-                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
-            )
+            producer_config = {
+                "bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS,
+                "value_serializer": lambda v: json.dumps(v).encode('utf-8'),
+                "security_protocol": KAFKA_SECURITY_PROTOCOL,
+                "session_timeout_ms": KAFKA_SESSION_TIMEOUT_MS,
+                "request_timeout_ms": KAFKA_REQUEST_TIMEOUT_MS,
+            }
+            if KAFKA_SECURITY_PROTOCOL and KAFKA_SECURITY_PROTOCOL.startswith("SASL"):
+                producer_config["sasl_mechanism"] = KAFKA_SASL_MECHANISM
+                producer_config["sasl_plain_username"] = KAFKA_USERNAME
+                producer_config["sasl_plain_password"] = KAFKA_PASSWORD
+
+            self.producer = KafkaProducer(**producer_config)
             self.topic = KAFKA_TOPIC
             logger.info(f"Kafka producer initialized successfully with topic: {KAFKA_TOPIC}")
         except Exception as e:
