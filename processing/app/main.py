@@ -72,7 +72,7 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router)
 
-@app.get("/", response_model=HealthCheckResponse, tags=["Health"])
+@app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check():
     """
     Health check endpoint.
