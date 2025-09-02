@@ -31,9 +31,8 @@ class TemperatureUnits(str, Enum):
 class VegetationType(str, Enum):
     """Enum for vegetation types."""
     TREES = "trees"
-    SHRUBS = "shrubs"
+    BRUSH = "brush"
     GRASS = "grass"
-
 class WindHeightUnits(str, Enum):
     """Enum for wind height units."""
     METERS = "m"

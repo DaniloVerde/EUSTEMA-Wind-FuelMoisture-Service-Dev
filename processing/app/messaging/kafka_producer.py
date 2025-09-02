@@ -19,7 +19,7 @@ class KafkaMessageProducer:
                 "bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS,
                 "value_serializer": lambda v: json.dumps(v).encode('utf-8'),
                 "security_protocol": KAFKA_SECURITY_PROTOCOL,
-                "session_timeout_ms": KAFKA_SESSION_TIMEOUT_MS,
+                # "session_timeout_ms": KAFKA_SESSION_TIMEOUT_MS,
                 "request_timeout_ms": KAFKA_REQUEST_TIMEOUT_MS,
             }
             if KAFKA_SECURITY_PROTOCOL and KAFKA_SECURITY_PROTOCOL.startswith("SASL"):

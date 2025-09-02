@@ -1,14 +1,14 @@
 import numpy as np
 import rasterio
 
-def create_wind_magnitude_direction(u_tiff_path, v_tiff_path, magnitude_output_path, direction_output_path):
+
+def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_path, direction_output_path):
     # Open the U and V component files
-    with rasterio.open(u_tiff_path) as u_src:
-        u_data = u_src.read(1)
-        profile = u_src.profile
-    
-    with rasterio.open(v_tiff_path) as v_src:
-        v_data = v_src.read(1)
+    with rasterio.open(tiff_path) as src:
+        u_data = src.read(u_band)  # u banda 1
+        v_data = src.read(v_band)  # v banda 2
+        profile = src.profile
+     
         
     # Calculate wind speed (magnitude)
     wind_speed = np.sqrt(u_data**2 + v_data**2)

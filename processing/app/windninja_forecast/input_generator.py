@@ -1,8 +1,10 @@
 import os
 import json
 import logging
+import rasterio
 from pathlib import Path
 from .utils import json_to_station_csv
+from .wind_raster_utils import create_wind_magnitude_direction
 from ..storage.minio_client import MinioClient
 
 logger = logging.getLogger(__name__)
@@ -210,12 +212,12 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
         # Extract and split simulation_time
         simulation_time = json_data.get('simulation_time', '')
         logger.debug(f"Simulation time: {simulation_time}")
-        
-        # Format as "2024-04-28T15:30"
+        from datetime import datetime
         try:
-            # Extract date and time components from ISO format
-            from datetime import datetime
-            dt = datetime.fromisoformat(simulation_time)
+            if isinstance(simulation_time, datetime):
+                dt = simulation_time
+            else:
+                dt = datetime.fromisoformat(str(simulation_time))
             year = dt.year
             month = dt.month
             day = dt.day
@@ -225,11 +227,12 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
         except Exception as e:
             logger.warning(f"Error parsing simulation_time date '{simulation_time}': {str(e)}")
             # Default values in case of error
-            year = datetime.now().year
-            month = datetime.now().month
-            day = datetime.now().day
-            hour = datetime.now().hour
-            minute = datetime.now().minute
+            now = datetime.now()
+            year = now.year
+            month = now.month
+            day = now.day
+            hour = now.hour
+            minute = now.minute
             logger.debug(f"Using default values: year={year}, month={month}, day={day}, hour={hour}, minute={minute}")
 
         # Create the configuration file content
@@ -345,38 +348,68 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
         else:
             logger.debug("No elevation file specified in JSON")
 
-        wind_speed_file = None
-        if 'wind_speed_file' in json_data:
-            logger.debug(
-                f"Starting wind speed file download: {json_data['wind_speed_file']}")
-            wind_speed_file = download_file_from_minio(
-                json_data['wind_speed_file'],
+        # wind_speed_file = None
+        # if 'wind_speed_file' in json_data:
+        #     logger.debug(
+        #         f"Starting wind speed file download: {json_data['wind_speed_file']}")
+        #     wind_speed_file = download_file_from_minio(
+        #         json_data['wind_speed_file'],
+        #         input_dir,
+        #         model_id,
+        #         file_type="wind speed",
+        #     )
+        #     logger.debug(
+        #         f"Wind speed file downloaded: {wind_speed_file}")
+        # else:
+        #     logger.debug(
+        #         "No wind speed file specified in JSON")
+
+        # wind_direction_file = None
+        # if 'wind_direction_file' in json_data:
+        #     logger.debug(
+        #         f"Starting wind direction file download: {json_data['wind_direction_file']}")
+        #     wind_direction_file = download_file_from_minio(
+        #         json_data['wind_direction_file'],
+        #         input_dir,
+        #         model_id,
+        #         file_type="wind direction",
+        #     )
+        #     logger.debug(
+        #         f"Wind direction file downloaded: {wind_direction_file}")
+        # else:
+        #     logger.debug(
+        #         "No wind direction file specified in JSON")
+        tiff_file = None
+        if 'tiff_file' in json_data:
+            tiff_file = download_file_from_minio(
+                json_data['tiff_file'],
                 input_dir,
                 model_id,
-                file_type="wind speed",
+                file_type="tiff",
             )
-            logger.debug(
-                f"Wind speed file downloaded: {wind_speed_file}")
-        else:
-            logger.debug(
-                "No wind speed file specified in JSON")
-
-        wind_direction_file = None
-        if 'wind_direction_file' in json_data:
-            logger.debug(
-                f"Starting wind direction file download: {json_data['wind_direction_file']}")
-            wind_direction_file = download_file_from_minio(
-                json_data['wind_direction_file'],
-                input_dir,
-                model_id,
-                file_type="wind direction",
+            u_band = json_data.get('u_band', 1)
+            v_band = json_data.get('v_band', 2)
+            
+            with rasterio.open(tiff_file) as src:
+                band_count = src.count
+                if band_count < max(u_band, v_band):
+                    logger.error(f"Il file TIFF '{tiff_file}' ha solo {band_count} bande, richieste: {u_band}, {v_band}")
+                    raise ValueError(f"Il file TIFF '{tiff_file}' deve avere almeno {max(u_band, v_band)} bande.")
+            magnitude_output_path = os.path.join(input_dir, f"{model_id}_wind_speed.tif")
+            direction_output_path = os.path.join(input_dir, f"{model_id}_wind_direction.tif")
+            # Estrai le bande e crea i file
+            create_wind_magnitude_direction(
+                tiff_file, u_band, v_band, magnitude_output_path, direction_output_path
             )
-            logger.debug(
-                f"Wind direction file downloaded: {wind_direction_file}")
+            if not (os.path.exists(magnitude_output_path) and os.path.exists(direction_output_path)):
+                logger.error("I file di output del vento non sono stati creati correttamente.")
+                raise FileNotFoundError("Wind speed or direction file not created.")
+            wind_speed_file = magnitude_output_path
+            wind_direction_file = direction_output_path
         else:
-            logger.debug(
-                "No wind direction file specified in JSON")
-
+            logger.error("No tiff file specified in JSON")
+            wind_speed_file = None
+            wind_direction_file = None
         # Generate the WindNinja configuration file
         logger.debug("Starting WindNinja configuration file generation")
         config_file = generate_windninja_config(

@@ -108,18 +108,19 @@ class WindNinjaForecastRequest(BaseModel):
     output_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
     vegetation: VegetationType = VegetationType.SHRUBS
-    wind_direction_file: str
-    wind_speed_file: str
+    tiff_file: str
+    u_band: int
+    v_band: int
     input_speed_units: SpeedUnits = SpeedUnits.MPS
     uni_air_temp: float = Field(..., ge=-30.0, le=60.0)
     uni_cloud_cover: float = Field(default=0.0, ge=0.0, le=100.0)
     simulation_time: datetime = Field(default_factory=datetime.now)
 
-    @field_validator('elevation_file', 'wind_direction_file', 'wind_speed_file')
+    @field_validator('elevation_file', 'tiff_file', )
     @classmethod
     def validate_extension_file(cls, v: str) -> str:
         """Validate the file extensions."""
-        allowed_extensions = ['.tif', '.asc']
+        allowed_extensions = ['.tif', '.tiff', '.asc']
         if Path(v).suffix.lower() not in allowed_extensions:
             raise ValueError(
                 f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}")
