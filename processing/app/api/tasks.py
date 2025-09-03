@@ -95,8 +95,9 @@ def process_windninja_request(model_id, json_data):
                 rel_path = os.path.relpath(local_file_path, output_dir)
                 minio_object_name = f"{results_path}/{rel_path}"
                 
-                # Upload the file
-                minio_client.upload_file(local_file_path, minio_object_name)
+                # Upload the file con headers custom se presenti
+                dict_headers = json_data.get('dict_metadata', {})
+                minio_client.upload_file(local_file_path, minio_object_name, dict_headers=dict_headers)
                 uploaded_files.append(minio_object_name)
         
         # Send progress message: Results uploaded
@@ -184,8 +185,9 @@ def process_windninja_forecast_request(model_id, json_data):
                 rel_path = os.path.relpath(local_file_path, output_dir)
                 minio_object_name = f"{results_path}/{rel_path}"
                 
-                # Upload the file
-                minio_client.upload_file(local_file_path, minio_object_name)
+                # Upload the file con headers custom se presenti
+                dict_headers = json_data.get('dict_metadata', {})
+                minio_client.upload_file(local_file_path, minio_object_name, dict_headers=dict_headers)
                 uploaded_files.append(minio_object_name)
         
         # Send progress message: Results uploaded

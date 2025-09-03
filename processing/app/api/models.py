@@ -38,7 +38,7 @@ class WindNinjaRequest(BaseModel):
     elevation_file: str
     output_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
-    vegetation: VegetationType = VegetationType.SHRUBS
+    vegetation: VegetationType = VegetationType.BRUSH
     meteorological_stations: List[MeteorologicalStation]
 
     @field_validator('elevation_file')
@@ -107,7 +107,7 @@ class WindNinjaForecastRequest(BaseModel):
     units_input_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
     output_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
-    vegetation: VegetationType = VegetationType.SHRUBS
+    vegetation: VegetationType = VegetationType.BRUSH
     tiff_file: str
     u_band: int
     v_band: int
@@ -115,6 +115,7 @@ class WindNinjaForecastRequest(BaseModel):
     uni_air_temp: float = Field(..., ge=-30.0, le=60.0)
     uni_cloud_cover: float = Field(default=0.0, ge=0.0, le=100.0)
     simulation_time: datetime = Field(default_factory=datetime.now)
+    dict_metadata: dict = Field(default_factory=dict)
 
     @field_validator('elevation_file', 'tiff_file', )
     @classmethod

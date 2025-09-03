@@ -28,8 +28,16 @@ class MinioClient:
         except Exception as e:
             logger.error(f"Error ensuring bucket exists: {str(e)}")
             raise
-    
-    def upload_file(self, file_path, object_name):
+        
+    def _normalize_metadata(self, d):
+        out = {}
+        for k, v in d.items():
+            key = str(k).strip().lower()
+            key = key.replace(" ", "_")
+            out[key] = str(v)
+        return out
+
+    def upload_file(self, file_path, object_name, dict_headers={}):
         """
         Upload a file to MinIO
         
@@ -40,9 +48,11 @@ class MinioClient:
         Returns:
             URL of the uploaded object
         """
+        normalized_headers = self._normalize_metadata(dict_headers)
+        
         try:
             logger.info(f"Uploading file {file_path} to MinIO as {object_name}")
-            self.client.fput_object(MINIO_BUCKET, object_name, file_path)
+            self.client.fput_object(MINIO_BUCKET, object_name, file_path, metadata=normalized_headers)
             url = f"{MINIO_ENDPOINT}/{MINIO_BUCKET}/{object_name}"
             logger.info(f"File uploaded successfully to {url}")
             return url

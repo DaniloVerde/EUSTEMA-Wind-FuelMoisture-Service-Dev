@@ -132,7 +132,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 | `elevation_file` | string | Sì | Percorso del file di elevazione (formato .tif/.asc) |
 | `output_wind_height` | float | No | Altezza output del vento (default: 10.0) |
 | `units_output_wind_height` | string | No | Unità altezza output ("m", "ft") |
-| `vegetation` | string | No | Tipo di vegetazione ("trees", "shrubs", "grass") |
+| `vegetation` | string | No | Tipo di vegetazione ("trees", "brush", "grass") |
 | `meteorological_stations` | array | Sì | Array di stazioni meteorologiche |
 
 **Struttura Stazione Meteorologica:**
@@ -359,7 +359,7 @@ Calcola l'umidità del combustibile basata su osservazioni meteorologiche.
 | `HeightUnits` | meters, feet | Unità di altezza |
 | `SpeedUnits` | mps, kph, mph, kts | Unità di velocità |
 | `TemperatureUnits` | C, F | Unità di temperatura |
-| `VegetationType` | trees, shrubs, grass | Tipo di vegetazione |
+| `VegetationType` | trees, brush, grass | Tipo di vegetazione |
 | `WindHeightUnits` | m, ft | Unità altezza vento |
 
 ### Validazioni
