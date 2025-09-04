@@ -4,6 +4,10 @@ import os
 ROOT_PATH = os.getenv("ROOT_PATH", "/")
 DOCS_URL = os.getenv("DOCS_URL", "/docs")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+CORS_ALLOW_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS")
+if not CORS_ALLOW_ORIGINS:
+    raise RuntimeError("CORS_ALLOW_ORIGINS environment variable is not set or empty.")
+CORS_ALLOW_ORIGINS = [origin.strip() for origin in CORS_ALLOW_ORIGINS.split(",")]
 
 # MinIO settings
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
