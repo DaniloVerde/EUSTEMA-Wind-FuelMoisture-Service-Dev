@@ -9,7 +9,7 @@ class MinioClient:
     def __init__(self):
         logger.info(f"Initializing MinIO client with endpoint: {MINIO_ENDPOINT}")
         self.client = Minio(
-            MINIO_ENDPOINT,
+            MINIO_ENDPOINT, # type: ignore
             access_key=MINIO_ACCESS_KEY,
             secret_key=MINIO_SECRET_KEY,
             secure=False  # Set to True if using HTTPS
@@ -51,9 +51,14 @@ class MinioClient:
         normalized_headers = self._normalize_metadata(dict_headers)
         
         try:
+            parts = object_name.strip("/").split("/", 1)
+            if len(parts) != 2:
+                logger.error(f"Invalid object name format: {object_name}. Expected 'bucket_name/object_name'.")
+                raise ValueError("Invalid object name format. Expected 'bucket_name/object_name'.")
+            bucket_name, object_name = parts
             logger.info(f"Uploading file {file_path} to MinIO as {object_name}")
-            self.client.fput_object(MINIO_BUCKET, object_name, file_path, metadata=normalized_headers)
-            url = f"{MINIO_ENDPOINT}/{MINIO_BUCKET}/{object_name}"
+            self.client.fput_object(bucket_name, object_name, file_path, metadata=normalized_headers)
+            url = f"{MINIO_ENDPOINT}/{bucket_name}/{object_name}"
             logger.info(f"File uploaded successfully to {url}")
             return url
         except Exception as e:
@@ -69,29 +74,14 @@ class MinioClient:
             file_path: Path where to save the downloaded file
         """
         try:
+            parts = object_name.stript("/").split("/", 1)
+            if len(parts) != 2:
+                logger.error(f"Invalid object name format: {object_name}. Expected 'bucket_name/object_name'.")
+                raise ValueError("Invalid object name format. Expected 'bucket_name/object_name'.")
+            bucket_name, object_name = parts
             logger.info(f"Downloading object {object_name} from MinIO to {file_path}")
-            self.client.fget_object(MINIO_BUCKET, object_name, file_path)
+            self.client.fget_object(bucket_name, object_name, file_path)
             logger.info(f"File downloaded successfully to {file_path}")
         except Exception as e:
             logger.error(f"Error downloading file from MinIO: {str(e)}")
-            raise
-        
-    def list_files(self, prefix=""):
-        """
-        List files in the bucket with an optional prefix
-        
-        Args:
-            prefix: Optional prefix to filter objects
-            
-        Returns:
-            List of object names
-        """
-        try:
-            logger.debug(f"Listing objects in bucket '{MINIO_BUCKET}' with prefix '{prefix}'")
-            objects = self.client.list_objects(MINIO_BUCKET, prefix=prefix, recursive=True)
-            object_names = [obj.object_name for obj in objects]
-            logger.debug(f"Found {len(object_names)} objects")
-            return object_names
-        except Exception as e:
-            logger.error(f"Error listing files in MinIO: {str(e)}")
             raise
