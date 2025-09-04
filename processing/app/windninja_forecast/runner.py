@@ -32,17 +32,28 @@ def run_windninja(config_file, working_dir=None, output_dir=None, timeout=None):
             cwd=working_dir
         )
         
-        # Wait for completion with optional timeout
-        stdout, stderr = process.communicate(timeout=timeout)
-        exit_code = process.returncode
-        
-        if exit_code == 0:
-            logger.info("WindNinja executed successfully")
-        else:
-            logger.error(f"WindNinja failed with exit code {exit_code}")
-            logger.error(f"Stderr: {stderr}")
-        
-        return exit_code, stdout, stderr
+        stdout_lines = []
+        stderr_lines = []
+
+        # Lettura in tempo reale
+        import threading
+
+        def log_stream(stream, log_func, lines_list):
+            for line in iter(stream.readline, ''):
+                log_func(line.rstrip())
+                lines_list.append(line)
+            stream.close()
+
+        stdout_thread = threading.Thread(target=log_stream, args=(process.stdout, logger.info, stdout_lines))
+        stderr_thread = threading.Thread(target=log_stream, args=(process.stderr, logger.error, stderr_lines))
+        stdout_thread.start()
+        stderr_thread.start()
+        stdout_thread.join(timeout)
+        stderr_thread.join(timeout)
+
+        exit_code = process.wait(timeout=timeout)
+
+        return exit_code, ''.join(stdout_lines), ''.join(stderr_lines)
     
     except subprocess.TimeoutExpired:
         logger.error(f"Timeout expired ({timeout}s) during WindNinja execution")

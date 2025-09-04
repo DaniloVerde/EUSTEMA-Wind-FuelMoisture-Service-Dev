@@ -8,6 +8,8 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
         u_data = src.read(u_band)  # u banda 1
         v_data = src.read(v_band)  # v banda 2
         profile = src.profile
+        profile.update(count=1)
+        profile.update(nodata=-9999)
      
         
     # Calculate wind speed (magnitude)
