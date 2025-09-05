@@ -63,7 +63,7 @@ def generate_station_files_from_json(json_filepath, data_dir, model_id=None):
         raise
 
 
-def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generic"):
+def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generic", is_forecast=False):
     """
     Download a file from MinIO and save it to the specified directory
 
@@ -99,7 +99,7 @@ def download_file_from_minio(file_path, output_dir, model_id=None, file_type="ge
 
         # Download directly to the final path
         logger.debug("Starting file download...")
-        minio_client.download_file(file_path, local_file_path)
+        minio_client.download_file(file_path, local_file_path, is_forecast=is_forecast)
         logger.debug(f"Download completed to: {local_file_path}")
 
         logger.info(f"{file_type.capitalize()} file downloaded to {local_file_path}")
@@ -379,27 +379,28 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
         # else:
         #     logger.debug(
         #         "No wind direction file specified in JSON")
-        tiff_file = None
-        if 'tiff_file' in json_data:
-            tiff_file = download_file_from_minio(
-                json_data['tiff_file'],
+        wind_file = None
+        if 'wind_file' in json_data:
+            wind_file = download_file_from_minio(
+                json_data['wind_file'],
                 input_dir,
                 model_id,
                 file_type="tiff",
+                is_forecast=True
             )
             u_band = json_data.get('u_band', 1)
             v_band = json_data.get('v_band', 2)
             
-            with rasterio.open(tiff_file) as src:
+            with rasterio.open(wind_file) as src:
                 band_count = src.count
                 if band_count < max(u_band, v_band):
-                    logger.error(f"Il file TIFF '{tiff_file}' ha solo {band_count} bande, richieste: {u_band}, {v_band}")
-                    raise ValueError(f"Il file TIFF '{tiff_file}' deve avere almeno {max(u_band, v_band)} bande.")
+                    logger.error(f"Il file TIFF '{wind_file}' ha solo {band_count} bande, richieste: {u_band}, {v_band}")
+                    raise ValueError(f"Il file TIFF '{wind_file}' deve avere almeno {max(u_band, v_band)} bande.")
             magnitude_output_path = os.path.join(input_dir, f"{model_id}_wind_speed.tif")
             direction_output_path = os.path.join(input_dir, f"{model_id}_wind_direction.tif")
             # Estrai le bande e crea i file
             create_wind_magnitude_direction(
-                tiff_file, u_band, v_band, magnitude_output_path, direction_output_path
+                wind_file, u_band, v_band, magnitude_output_path, direction_output_path
             )
             if not (os.path.exists(magnitude_output_path) and os.path.exists(direction_output_path)):
                 logger.error("I file di output del vento non sono stati creati correttamente.")

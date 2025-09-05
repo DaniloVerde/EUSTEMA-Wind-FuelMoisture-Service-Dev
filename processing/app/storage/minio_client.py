@@ -1,6 +1,6 @@
 from minio import Minio
 from ..config import get_logger
-from ..config.settings import MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET
+from ..config.settings import MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET, MINIO_FORECAST_BUCKET
 
 # Get module logger
 logger = get_logger(__name__)
@@ -51,21 +51,16 @@ class MinioClient:
         normalized_headers = self._normalize_metadata(dict_headers)
         
         try:
-            parts = object_name.strip("/").split("/", 1)
-            if len(parts) != 2:
-                logger.error(f"Invalid object name format: {object_name}. Expected 'bucket_name/object_name'.")
-                raise ValueError("Invalid object name format. Expected 'bucket_name/object_name'.")
-            bucket_name, object_name = parts
             logger.info(f"Uploading file {file_path} to MinIO as {object_name}")
-            self.client.fput_object(bucket_name, object_name, file_path, metadata=normalized_headers)
-            url = f"{MINIO_ENDPOINT}/{bucket_name}/{object_name}"
+            self.client.fput_object(MINIO_BUCKET, object_name, file_path, metadata=normalized_headers)
+            url = f"{MINIO_ENDPOINT}/{MINIO_BUCKET}/{object_name}"
             logger.info(f"File uploaded successfully to {url}")
             return url
         except Exception as e:
             logger.error(f"Error uploading file to MinIO: {str(e)}")
             raise
     
-    def download_file(self, object_name, file_path):
+    def download_file(self, object_name, file_path, is_forecast=False):
         """
         Download a file from MinIO
         
@@ -74,11 +69,7 @@ class MinioClient:
             file_path: Path where to save the downloaded file
         """
         try:
-            parts = object_name.stript("/").split("/", 1)
-            if len(parts) != 2:
-                logger.error(f"Invalid object name format: {object_name}. Expected 'bucket_name/object_name'.")
-                raise ValueError("Invalid object name format. Expected 'bucket_name/object_name'.")
-            bucket_name, object_name = parts
+            bucket_name = MINIO_FORECAST_BUCKET if is_forecast is True else MINIO_BUCKET
             logger.info(f"Downloading object {object_name} from MinIO to {file_path}")
             self.client.fget_object(bucket_name, object_name, file_path)
             logger.info(f"File downloaded successfully to {file_path}")
