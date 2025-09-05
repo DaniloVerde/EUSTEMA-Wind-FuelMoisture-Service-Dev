@@ -394,21 +394,19 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
             with rasterio.open(wind_file) as src:
                 band_count = src.count
                 if band_count < max(u_band, v_band):
-                    logger.error(f"Il file TIFF '{wind_file}' ha solo {band_count} bande, richieste: {u_band}, {v_band}")
-                    raise ValueError(f"Il file TIFF '{wind_file}' deve avere almeno {max(u_band, v_band)} bande.")
+                    logger.error(f"Il file wind '{wind_file}' ha solo {band_count} bande, richieste: {u_band}, {v_band}")
+                    raise ValueError(f"Il file wind '{wind_file}' deve avere almeno {max(u_band, v_band)} bande.")
             magnitude_output_path = os.path.join(input_dir, f"{model_id}_wind_speed.tif")
             direction_output_path = os.path.join(input_dir, f"{model_id}_wind_direction.tif")
             # Estrai le bande e crea i file
-            create_wind_magnitude_direction(
-                wind_file, u_band, v_band, magnitude_output_path, direction_output_path
+            wind_speed_file, wind_direction_file = create_wind_magnitude_direction(
+                wind_file, u_band, v_band, magnitude_output_path, direction_output_path, elevation_file_path=elevation_file
             )
-            if not (os.path.exists(magnitude_output_path) and os.path.exists(direction_output_path)):
+            if not (os.path.exists(wind_speed_file) and os.path.exists(wind_direction_file)):
                 logger.error("I file di output del vento non sono stati creati correttamente.")
                 raise FileNotFoundError("Wind speed or direction file not created.")
-            wind_speed_file = magnitude_output_path
-            wind_direction_file = direction_output_path
         else:
-            logger.error("No tiff file specified in JSON")
+            logger.error("No wind file specified in JSON")
             wind_speed_file = None
             wind_direction_file = None
         # Generate the WindNinja configuration file
