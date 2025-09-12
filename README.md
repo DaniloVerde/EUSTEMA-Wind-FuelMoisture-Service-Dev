@@ -73,6 +73,7 @@ docker run -d \
 | `MINIO_ACCESS_KEY` | Chiave di accesso MinIO | `minioadmin` |
 | `MINIO_SECRET_KEY` | Chiave segreta MinIO | `minioadmin` |
 | `MINIO_BUCKET` | Nome del bucket MinIO | `cu68` |
+| `MINIO_FORECAST_BUCKET` | Nome del bucket MinIO per previsioni | `forecast-data` |
 | `KAFKA_BOOTSTRAP_SERVERS` | Server Kafka | `kafka:9092` |
 | `KAFKA_TOPIC` | Topic per notifiche | `windninja-results` |
 | `LOG_LEVEL` | Livello di logging | `INFO` |
@@ -153,12 +154,13 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 | `temperature_units` | string | No | Unità temperatura ("C", "F") |
 | `cloud_cover` | float | No | Copertura nuvolosa (0-100%) |
 | `date_time` | datetime | No | Data e ora della misurazione |
+| `dict_metadata` | object | No | Metadati addizionali |
 
 **Esempio Payload:**
 ```json
 {
   "modelId": "20250331080030",
-  "elevation_file": "20250331080030/input/w46575_s10.tif",
+  "elevation_file": "input/w46575_s10.tif",
   "output_wind_height": 10,
   "units_output_wind_height": "m",
   "vegetation": "trees",
@@ -179,7 +181,13 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
       "cloud_cover": 0,
       "date_time": "2025-03-31T08:00"
     }
-  ]
+  ],
+  "dict_metadata": {
+    "author": "Mario Rossi",
+    "project": "WindNinja",
+    "x-amz-meta-custom": "valore_custom",
+    "description": "File generato da WindNinja"
+  }
 }
 ```
 
@@ -212,29 +220,38 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
 | `output_wind_height` | float | No | Altezza output del vento (default: 10.0) |
 | `units_output_wind_height` | string | No | Unità altezza output ("m", "ft") |
 | `vegetation` | string | No | Tipo di vegetazione |
-| `wind_direction_file` | string | Sì | File griglia direzione vento |
-| `wind_speed_file` | string | Sì | File griglia velocità vento |
+| `wind_file` | string | Sì | File griglia previsioni con componenti del vento |
+| `u_band` | integer | No | Banda componente U nel file griglia (default: 1) |
+| `v_band` | integer | No | Banda componente V nel file griglia (default: 2) |
 | `input_speed_units` | string | No | Unità velocità input ("mps", "kph", "mph", "kts") |
 | `uni_air_temp` | float | Sì | Temperatura uniforme dell'aria |
 | `uni_cloud_cover` | float | No | Copertura nuvolosa uniforme |
 | `simulation_time` | datetime | No | Tempo di simulazione |
+| `dict_metadata` | object | No | Metadati addizionali |
 
 **Esempio Payload:**
 ```json
 {
   "modelId": "20250331080030",
-  "elevation_file": "20250331080030/input/w46575_s10.tif",
+  "elevation_file": "input/w46575_s10.tif",
   "input_wind_height": 10,
   "units_input_wind_height": "m",
   "output_wind_height": 10,
   "units_output_wind_height": "m",
   "vegetation": "trees",
-  "wind_direction_file": "20250331080030/input/wind_direction.tif",
-  "wind_speed_file": "20250331080030/input/wind_speed.tif",
+  "wind_file": "input/cog_ICON_2I_SURFACE_PRESSURE_LEVELS202507180000.tiff",
+  "u_band": 1,
+  "v_band": 2,
   "input_speed_units": "mps",
   "uni_air_temp": 24,
   "uni_cloud_cover": 0,
-  "simulation_time": "2025-03-31T12:00"
+  "simulation_time": "2025-03-31T12:00",
+  "dict_metadata": {
+    "author": "Mario Rossi",
+    "project": "WindNinja",
+    "x-amz-meta-custom": "valore_custom",
+    "description": "File generato da WindNinja"
+  }
 }
 ```
 

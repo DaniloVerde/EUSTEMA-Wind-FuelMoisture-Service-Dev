@@ -108,7 +108,7 @@ class WindNinjaForecastRequest(BaseModel):
     output_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
     vegetation: VegetationType = VegetationType.BRUSH
-    tiff_file: str
+    wind_file: str
     u_band: int
     v_band: int
     input_speed_units: SpeedUnits = SpeedUnits.MPS
@@ -117,7 +117,7 @@ class WindNinjaForecastRequest(BaseModel):
     simulation_time: datetime = Field(default_factory=datetime.now)
     dict_metadata: dict = Field(default_factory=dict)
 
-    @field_validator('elevation_file', 'tiff_file', )
+    @field_validator('elevation_file', 'wind_file', )
     @classmethod
     def validate_extension_file(cls, v: str) -> str:
         """Validate the file extensions."""

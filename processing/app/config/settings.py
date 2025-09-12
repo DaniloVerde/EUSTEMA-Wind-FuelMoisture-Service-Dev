@@ -14,6 +14,7 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "cu68")
+MINIO_FORECAST_BUCKET = os.getenv("MINIO_FORECAST_BUCKET", "forecast-data")
 
 if not all([MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY]):
     raise RuntimeError("MinIO credentials are not set in environment variables.")

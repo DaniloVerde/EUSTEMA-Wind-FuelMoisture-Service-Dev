@@ -4,5 +4,6 @@ __pycache__/
 data/minio/
 data/processing/
 logs/
+risk_reports/
 
 .env
