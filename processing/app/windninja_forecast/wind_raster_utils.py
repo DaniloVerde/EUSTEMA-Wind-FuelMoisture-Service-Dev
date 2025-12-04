@@ -52,6 +52,7 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
     wind_direction = (np.degrees(np.arctan2(v_data, u_data)) + 180) % 360
 
     profile.update(dtype=rasterio.float32)
+    profile.update(nodata=0)  # Imposta nodata a 0
 
     # Open elevation file and get CRS and geometry
     with rasterio.open(elevation_file_path) as elev_src:
@@ -79,7 +80,9 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
 
         # Reproject wind speed
         with rasterio.open(magnitude_output_path, 'w', **profile) as dst:
-            dst.write(wind_speed.astype(rasterio.float32), 1)
+            wind_speed_out = wind_speed.astype(rasterio.float32)
+            wind_speed_out[np.isnan(wind_speed_out)] = 0  # Sostituisci NaN con 0
+            dst.write(wind_speed_out, 1)
         with rasterio.open(magnitude_output_path) as src:
             transform, width, height = calculate_default_transform(
                 src.crs, elev_crs, src.width, src.height, *src.bounds)
@@ -88,7 +91,8 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
                 'crs': elev_crs,
                 'transform': transform,
                 'width': width,
-                'height': height
+                'height': height,
+                'nodata': 0  # Assicura nodata=0
             })
             reprojected_speed_path = magnitude_output_path.replace('.tif', '_reprojected.tif')
             with rasterio.open(reprojected_speed_path, 'w', **kwargs) as dst:
@@ -104,7 +108,9 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
 
         # Reproject wind direction
         with rasterio.open(direction_output_path, 'w', **profile) as dst:
-            dst.write(wind_direction.astype(rasterio.float32), 1)
+            wind_direction_out = wind_direction.astype(rasterio.float32)
+            wind_direction_out[np.isnan(wind_direction_out)] = 0  # Sostituisci NaN con 0
+            dst.write(wind_direction_out, 1)
         with rasterio.open(direction_output_path) as src:
             transform, width, height = calculate_default_transform(
                 src.crs, elev_crs, src.width, src.height, *src.bounds)
@@ -113,7 +119,8 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
                 'crs': elev_crs,
                 'transform': transform,
                 'width': width,
-                'height': height
+                'height': height,
+                'nodata': 0  # Assicura nodata=0
             })
             reprojected_direction_path = direction_output_path.replace('.tif', '_reprojected.tif')
             with rasterio.open(reprojected_direction_path, 'w', **kwargs) as dst:
@@ -128,25 +135,29 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
                 )
         # After reprojection, crop to DTM extent
         with rasterio.open(reprojected_speed_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True)
+            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
                 "driver": "GTiff",
                 "height": out_image.shape[1],
                 "width": out_image.shape[2],
-                "transform": out_transform
+                "transform": out_transform,
+                "nodata": 0
             })
             cropped_speed_path = reprojected_speed_path.replace('.tif', '_cropped.tif')
             with rasterio.open(cropped_speed_path, "w", **out_meta) as dest:
                 dest.write(out_image)
         with rasterio.open(reprojected_direction_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True)
+            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
                 "driver": "GTiff",
                 "height": out_image.shape[1],
                 "width": out_image.shape[2],
-                "transform": out_transform
+                "transform": out_transform,
+                "nodata": 0
             })
             cropped_direction_path = reprojected_direction_path.replace('.tif', '_cropped.tif')
             with rasterio.open(cropped_direction_path, "w", **out_meta) as dest:
@@ -156,30 +167,38 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
     else:
         print("Wind rasters CRS matches elevation CRS, no reprojection needed.")
         with rasterio.open(magnitude_output_path, 'w', **profile) as dst:
-            dst.write(wind_speed.astype(rasterio.float32), 1)
+            wind_speed_out = wind_speed.astype(rasterio.float32)
+            wind_speed_out[np.isnan(wind_speed_out)] = 0  # Sostituisci NaN con 0
+            dst.write(wind_speed_out, 1)
         with rasterio.open(direction_output_path, 'w', **profile) as dst:
-            dst.write(wind_direction.astype(rasterio.float32), 1)
+            wind_direction_out = wind_direction.astype(rasterio.float32)
+            wind_direction_out[np.isnan(wind_direction_out)] = 0  # Sostituisci NaN con 0
+            dst.write(wind_direction_out, 1)
         # After writing, crop to DTM extent
         with rasterio.open(magnitude_output_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True)
+            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
                 "driver": "GTiff",
                 "height": out_image.shape[1],
                 "width": out_image.shape[2],
-                "transform": out_transform
+                "transform": out_transform,
+                "nodata": 0
             })
             cropped_speed_path = magnitude_output_path.replace('.tif', '_cropped.tif')
             with rasterio.open(cropped_speed_path, "w", **out_meta) as dest:
                 dest.write(out_image)
         with rasterio.open(direction_output_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True)
+            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
                 "driver": "GTiff",
                 "height": out_image.shape[1],
                 "width": out_image.shape[2],
-                "transform": out_transform
+                "transform": out_transform,
+                "nodata": 0
             })
             cropped_direction_path = direction_output_path.replace('.tif', '_cropped.tif')
             with rasterio.open(cropped_direction_path, "w", **out_meta) as dest:
