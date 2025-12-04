@@ -62,18 +62,14 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
         # Determina il buffer in unità CRS
         if elev_crs.is_geographic:
             # CRS geografico: buffer in gradi (1 grado ≈ 111 km)
-            buffer_crs = buffer_km / 111.0
+            crop_buffer_crs = buffer_km / 111.0
         else:
             # CRS proiettato: buffer in metri
-            buffer_crs = buffer_km * 1000
+            crop_buffer_crs = buffer_km * 1000
 
-        expanded_bounds = expand_bounds(elev_bounds, buffer_crs)
-        elev_geom = bbox_to_geojson(expanded_bounds)
-        elev_transform = elev_src.transform
-        elev_shape = elev_src.shape
-        elev_profile = elev_src.profile
-        # Get geometry for mask (full extent polygon) without shapely
-        elev_geom = bbox_to_geojson(elev_bounds)
+        # Estensione per il crop: extent DTM + X km
+        crop_expanded_bounds = expand_bounds(elev_bounds, crop_buffer_crs)
+        crop_elev_geom = bbox_to_geojson(crop_expanded_bounds)
 
     if wind_crs != elev_crs:
         print(f"Reprojecting wind rasters to match elevation CRS: {elev_crs}")
@@ -135,7 +131,7 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
                 )
         # After reprojection, crop to DTM extent
         with rasterio.open(reprojected_speed_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image, out_transform = mask(src, crop_elev_geom, crop=True, nodata=0)
             out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
@@ -149,7 +145,7 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
             with rasterio.open(cropped_speed_path, "w", **out_meta) as dest:
                 dest.write(out_image)
         with rasterio.open(reprojected_direction_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image, out_transform = mask(src, crop_elev_geom, crop=True, nodata=0)
             out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
@@ -176,7 +172,7 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
             dst.write(wind_direction_out, 1)
         # After writing, crop to DTM extent
         with rasterio.open(magnitude_output_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image, out_transform = mask(src, crop_elev_geom, crop=True, nodata=0)
             out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
@@ -190,7 +186,7 @@ def create_wind_magnitude_direction(tiff_path, u_band, v_band, magnitude_output_
             with rasterio.open(cropped_speed_path, "w", **out_meta) as dest:
                 dest.write(out_image)
         with rasterio.open(direction_output_path) as src:
-            out_image, out_transform = mask(src, elev_geom, crop=True, nodata=0)
+            out_image, out_transform = mask(src, crop_elev_geom, crop=True, nodata=0)
             out_image[out_image == src.nodata] = 0  # Sostituisci nodata con 0
             out_meta = src.meta.copy()
             out_meta.update({
