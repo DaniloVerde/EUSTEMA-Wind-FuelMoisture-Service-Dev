@@ -45,3 +45,9 @@ LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %
 LOG_FILE = os.getenv("LOG_FILE", "/app/logs/windninja.log")
 LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", "5"))
 LOG_MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", "10485760"))  # 10 MB
+
+# Log read/download settings
+try:
+    LOG_TAIL_DEFAULT_LINES = int(os.getenv("LOG_TAIL_DEFAULT_LINES", "50"))
+except ValueError:
+    LOG_TAIL_DEFAULT_LINES = 50

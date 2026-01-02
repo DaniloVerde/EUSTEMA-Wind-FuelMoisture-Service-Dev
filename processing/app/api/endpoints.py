@@ -1,6 +1,10 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
+from fastapi import Query
+from fastapi.responses import FileResponse, PlainTextResponse
 import logging
 from datetime import datetime
+from collections import deque
+import os
 
 from .models import (
     WindNinjaRequest,
@@ -13,14 +17,14 @@ from .models import (
 from .tasks import process_windninja_request, process_windninja_forecast_request
 from ..cleanup.cleanup_simulations_data import CleanupSimulationsData
 from ..fuel_moisture.runner import process_fuel_moisture_data
-from ..config.settings import DATA_DIR
+from ..config import settings
 
 # Get module logger
 logger = logging.getLogger(__name__)
 
 # Initialize cleanup utility
 cleanup_util = CleanupSimulationsData(
-    output_dir=DATA_DIR, keep_recent=3)
+    output_dir=settings.DATA_DIR, keep_recent=3)
 
 router = APIRouter(tags=["Processing"])
 
@@ -164,3 +168,41 @@ async def process_windninja_forecast(request: WindNinjaForecastRequest, backgrou
             cleanup_util.remove_old_simulations()
         except Exception as cleanup_err:
             logger.error(f"Cleanup error: {cleanup_err}")
+
+
+@router.get("/logs/windninja", tags=["Logs"])
+async def windninja_log(
+    download: bool = Query(False, description="If true, download the full windninja.log file"),
+    lines: int = Query(
+        default=settings.LOG_TAIL_DEFAULT_LINES,
+        ge=1,
+        description="Number of last lines to return when download=false",
+    ),
+):
+    """Return last N lines of windninja.log (default from .env) or download the full file."""
+
+    log_file_path = settings.LOG_FILE
+
+    if not log_file_path or not os.path.exists(log_file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Log file not found: {log_file_path}",
+        )
+
+    if download:
+        return FileResponse(
+            path=log_file_path,
+            media_type="text/plain",
+            filename=os.path.basename(log_file_path) or "windninja.log",
+        )
+
+    try:
+        with open(log_file_path, "r", encoding="utf-8", errors="replace") as f:
+            last_lines = deque(f, maxlen=lines)
+        return PlainTextResponse("".join(last_lines), media_type="text/plain")
+    except Exception as e:
+        logger.error(f"Error reading log file {log_file_path}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to read log file",
+        )
