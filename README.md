@@ -77,6 +77,8 @@ docker run -d \
 | `KAFKA_BOOTSTRAP_SERVERS` | Server Kafka | `kafka:9092` |
 | `KAFKA_TOPIC` | Topic per notifiche | `windninja-results` |
 | `LOG_LEVEL` | Livello di logging | `INFO` |
+| `LOG_FILE` | Percorso del file di log WindNinja | `/app/logs/windninja.log` |
+| `LOG_TAIL_DEFAULT_LINES` | Numero righe di default per l’endpoint log | `50` |
 
 ### Deploy con Docker Compose (Completo)
 
@@ -363,6 +365,32 @@ Calcola l'umidità del combustibile basata su osservazioni meteorologiche.
     }
   ]
 }
+```
+
+### 5. Lettura/Download Log WindNinja
+
+**GET** `/logs/windninja`
+
+Permette di ottenere le ultime *N* righe del file di log `windninja.log` oppure scaricare l’intero file.
+
+**Query parameters:**
+
+| Parametro | Tipo | Default | Descrizione |
+|----------|------|---------|-------------|
+| `lines` | integer | `LOG_TAIL_DEFAULT_LINES` (50) | Numero di righe finali da restituire (usato solo se `download=false`) |
+| `download` | boolean | `false` | Se `true`, restituisce il file completo come download |
+
+**Esempi:**
+
+```bash
+# Ultime 50 righe (default)
+curl -s "http://localhost:8000/logs/windninja"
+
+# Ultime 200 righe
+curl -s "http://localhost:8000/logs/windninja?lines=200"
+
+# Download file intero
+curl -L -o windninja.log "http://localhost:8000/logs/windninja?download=true"
 ```
 
 ## Modelli di Dati
