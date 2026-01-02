@@ -14,6 +14,7 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "cu68")
+MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "False").lower() == "true"
 MINIO_FORECAST_BUCKET = os.getenv("MINIO_FORECAST_BUCKET", "forecast-data")
 
 if not all([MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY]):
@@ -31,8 +32,8 @@ KAFKA_SESSION_TIMEOUT_MS = int(os.getenv("KAFKA_SESSION_TIMEOUT_MS", "6000"))
 KAFKA_REQUEST_TIMEOUT_MS = int(os.getenv("KAFKA_REQUEST_TIMEOUT_MS", "10000"))
 KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "")
 
-# if not all([KAFKA_USERNAME, KAFKA_PASSWORD]):
-#     raise RuntimeError("Kafka credentials are not set in environment variables.")
+if not all([KAFKA_USERNAME, KAFKA_PASSWORD]):
+    raise RuntimeError("Kafka credentials are not set in environment variables.")
 
 # WindNinja settings
 WINDNINJA_EXECUTABLE = "WindNinja_cli"

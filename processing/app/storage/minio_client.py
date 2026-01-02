@@ -1,6 +1,6 @@
 from minio import Minio
 from ..config import get_logger
-from ..config.settings import MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET, MINIO_FORECAST_BUCKET
+from ..config.settings import MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET, MINIO_USE_SSL, MINIO_FORECAST_BUCKET
 
 # Get module logger
 logger = get_logger(__name__)
@@ -12,7 +12,7 @@ class MinioClient:
             MINIO_ENDPOINT, # type: ignore
             access_key=MINIO_ACCESS_KEY,
             secret_key=MINIO_SECRET_KEY,
-            secure=False  # Set to True if using HTTPS
+            secure=MINIO_USE_SSL  # Set to True if using HTTPS
         )
         self._ensure_bucket_exists()
     
