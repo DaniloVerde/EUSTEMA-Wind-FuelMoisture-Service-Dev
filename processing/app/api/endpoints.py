@@ -50,7 +50,7 @@ async def process_windninja(request: WindNinjaRequest, background_tasks: Backgro
 
         # Add the task to the background queue
         background_tasks.add_task(
-            process_windninja_request, request.modelId, request_data, request.resource_provider.value)
+            process_windninja_request, request.modelId, request_data, request.resource_provider.value, request.fews)
 
         # Return accepted response
         return ProcessingResponse(
@@ -147,7 +147,7 @@ async def process_windninja_forecast(request: WindNinjaForecastRequest, backgrou
 
         # Add the task to the background queue
         background_tasks.add_task(
-            process_windninja_forecast_request, request.modelId, request_data, request.resource_provider.value)
+            process_windninja_forecast_request, request.modelId, request_data, request.resource_provider.value, request.fews)
 
         # Return accepted response
         return ProcessingResponse(

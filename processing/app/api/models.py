@@ -37,6 +37,7 @@ class WindNinjaRequest(BaseModel):
     """Model for the WindNinja processing request."""
     modelId: str
     resource_provider: ResourceProviderType
+    fews: bool = Field(default=False, description="If true, uses FEWS MinIO buckets/credentials for this request")
     elevation_file: str
     output_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
@@ -106,6 +107,7 @@ class WindNinjaForecastRequest(BaseModel):
     """Model for the WindNinja forecast processing request."""
     modelId: str
     resource_provider: ResourceProviderType
+    fews: bool = Field(default=False, description="If true, uses FEWS MinIO buckets/credentials for this request")
     elevation_file: str
     input_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_input_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS

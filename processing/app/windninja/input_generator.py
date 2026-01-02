@@ -54,7 +54,7 @@ def generate_station_files_from_json(json_filepath, data_dir, model_id=None):
         logger.error(f"Error generating station files from {json_filepath}: {str(e)}")
         raise
 
-def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id=None):
+def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id=None, minio_client=None):
     """
     Download the elevation file from MinIO and save it to the specified directory
     
@@ -80,8 +80,9 @@ def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id
         logger.debug(f"Local file path: {local_file_path}")
         
         # Initialize MinIO client and download the file
-        logger.debug("Initializing MinIO client")
-        minio_client = MinioClient()
+        if minio_client is None:
+            logger.debug("Initializing MinIO client")
+            minio_client = MinioClient()
         
         # Remove the file if it already exists to avoid conflicts
         # if os.path.exists(local_file_path):
@@ -159,7 +160,8 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             elevation_file = download_elevation_file_from_minio(
                 elevation_file_path, 
                 input_dir, 
-                model_id
+                model_id,
+                minio_client=minio_client,
             )
             logger.debug(f"Elevation file downloaded: {elevation_file}")
         elif not elevation_file:
@@ -222,7 +224,7 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
         logger.error(f"Error generating WindNinja configuration file: {str(e)}")
         raise
 
-def process_windninja_input(json_filepath, data_dir, model_id=None):
+def process_windninja_input(json_filepath, data_dir, model_id=None, minio_client=None):
     """
     Process input data for WindNinja: generate CSV station files,
     download the elevation file and create the configuration file
@@ -277,7 +279,8 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
             elevation_file = download_elevation_file_from_minio(
                 json_data['elevation_file'], 
                 input_dir,
-                model_id  # Pass model_id to the download function
+                model_id,  # Pass model_id to the download function
+                minio_client=minio_client,
             )
             logger.debug(f"Elevation file downloaded: {elevation_file}")
         else:
