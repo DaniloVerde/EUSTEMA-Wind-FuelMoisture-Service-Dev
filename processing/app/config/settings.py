@@ -22,6 +22,7 @@ if not all([MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY]):
 # Kafka settings
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "windninja-results")
+KAFKA_TOPIC_RESULTS = "dxc-sim-{cu}"
 KAFKA_SECURITY_PROTOCOL = os.getenv("KAFKA_SECURITY_PROTOCOL", "PLAINTEXT")
 KAFKA_SASL_MECHANISM = os.getenv("KAFKA_SASL_MECHANISM", "")
 KAFKA_USERNAME = os.getenv("KAFKA_USERNAME")
@@ -30,8 +31,8 @@ KAFKA_SESSION_TIMEOUT_MS = int(os.getenv("KAFKA_SESSION_TIMEOUT_MS", "6000"))
 KAFKA_REQUEST_TIMEOUT_MS = int(os.getenv("KAFKA_REQUEST_TIMEOUT_MS", "10000"))
 KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "")
 
-if not all([KAFKA_USERNAME, KAFKA_PASSWORD]):
-    raise RuntimeError("Kafka credentials are not set in environment variables.")
+# if not all([KAFKA_USERNAME, KAFKA_PASSWORD]):
+#     raise RuntimeError("Kafka credentials are not set in environment variables.")
 
 # WindNinja settings
 WINDNINJA_EXECUTABLE = "WindNinja_cli"

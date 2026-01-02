@@ -3,7 +3,7 @@ from datetime import datetime
 from kafka import KafkaProducer
 from ..config import get_logger
 from ..config.settings import (
-    KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, KAFKA_SECURITY_PROTOCOL,
+    KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC_RESULTS, KAFKA_SECURITY_PROTOCOL,
     KAFKA_SASL_MECHANISM, KAFKA_USERNAME, KAFKA_PASSWORD,
     KAFKA_SESSION_TIMEOUT_MS, KAFKA_REQUEST_TIMEOUT_MS
 )
@@ -12,14 +12,13 @@ from ..config.settings import (
 logger = get_logger(__name__)
 
 class KafkaMessageProducer:
-    def __init__(self):
+    def __init__(self, resource_provider: str):
         logger.info(f"Initializing Kafka producer with bootstrap servers: {KAFKA_BOOTSTRAP_SERVERS}")
         try:
             producer_config = {
                 "bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS,
                 "value_serializer": lambda v: json.dumps(v).encode('utf-8'),
                 "security_protocol": KAFKA_SECURITY_PROTOCOL,
-                # "session_timeout_ms": KAFKA_SESSION_TIMEOUT_MS,
                 "request_timeout_ms": KAFKA_REQUEST_TIMEOUT_MS,
             }
             if KAFKA_SECURITY_PROTOCOL and KAFKA_SECURITY_PROTOCOL.startswith("SASL"):
@@ -28,13 +27,13 @@ class KafkaMessageProducer:
                 producer_config["sasl_plain_password"] = KAFKA_PASSWORD
 
             self.producer = KafkaProducer(**producer_config)
-            self.topic = KAFKA_TOPIC
-            logger.info(f"Kafka producer initialized successfully with topic: {KAFKA_TOPIC}")
+            self.topic = KAFKA_TOPIC_RESULTS.format(cu=resource_provider)
+            logger.info(f"Kafka producer initialized successfully with topic: {self.topic}")
         except Exception as e:
             logger.error(f"Failed to initialize Kafka producer: {str(e)}")
             raise
     
-    def send_simulation_complete(self, simulation_id, status, results_url):
+    def send_simulation_complete(self, simulation_id, status, results_url, file_names):
         """
         Send a message that a simulation has completed
         
@@ -42,6 +41,7 @@ class KafkaMessageProducer:
             simulation_id: Unique identifier for the simulation
             status: Status of the simulation (usually 'completed')
             results_url: URL where the results can be accessed
+            file_names: produced file names as a list
         """
         try:
             message = {
@@ -49,7 +49,9 @@ class KafkaMessageProducer:
                 "simulation_id": simulation_id,
                 "status": "OK",
                 "results_url": results_url,
-                "timestamp": datetime.now().isoformat()
+                "file_names": file_names,
+                "timestamp": datetime.now().isoformat(),
+                "sender": "windninja"
             }
             
             logger.info(f"Sending simulation_complete message for simulation {simulation_id}")
@@ -82,7 +84,8 @@ class KafkaMessageProducer:
                 "simulation_id": simulation_id,
                 "status": "KO",
                 "message": error_message,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "sender": "windninja"
             }
             
             logger.info(f"Sending simulation_failed message for simulation {simulation_id}")
@@ -115,7 +118,8 @@ class KafkaMessageProducer:
                 "simulation_id": simulation_id,
                 "progress": progress_percentage,
                 "status": status_message,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "sender": "windninja"
             }
             
             logger.info(f"Sending simulation_progress message for simulation {simulation_id}: {progress_percentage}% - {status_message}")

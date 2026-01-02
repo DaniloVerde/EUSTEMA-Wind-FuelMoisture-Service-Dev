@@ -202,7 +202,7 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
         logger.debug("Adding default output parameters")
         config_content.extend([
             f"output_speed_units       = mps",
-            f"mesh_resolution          = 500.0",
+            f"mesh_resolution          = {json_data['mesh_resolution']}",
             f"units_mesh_resolution    = m",
             f"write_goog_output        = true",
             f"write_shapefile_output   = true",

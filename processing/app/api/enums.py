@@ -37,3 +37,8 @@ class WindHeightUnits(str, Enum):
     """Enum for wind height units."""
     METERS = "m"
     FEET = "ft"
+
+class ResourceProviderType(str, Enum):
+    """Enum for resource providers. Used for kafka topics result messaging."""
+    v6_8 = "v6-8"
+    v6_7 = "v6-7"
