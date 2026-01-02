@@ -9,7 +9,7 @@ from app.windninja.input_generator import process_windninja_input
 from app.windninja.runner import run_windninja
 from app.windninja_forecast.input_generator import process_windninja_input as process_forecast_input
 from app.windninja_forecast.runner import run_windninja as run_forecast_windninja
-from app.messaging.kafka_producer import KafkaMessageProducer
+from app.messaging.kafka_producer import KafkaMessageProducer, FewsKafkaMessageProducer
 from app.storage.minio_client import MinioClient, FewsMinioClient
 
 # Get module logger
@@ -19,17 +19,32 @@ def with_error_handling(func):
     """Decorator to handle errors in background tasks and send Kafka messages."""
     @wraps(func)
     def wrapper(model_id, *args, **kwargs):
-        resource_provider = kwargs.get("resource_provider")
-        logger.info(f"Error Resource provider {resource_provider}")
-        kafka_producer = KafkaMessageProducer(resource_provider)
         try:
             return func(model_id, *args, **kwargs)
         except Exception as e:
+            resource_provider = kwargs.get("resource_provider")
+            fews = bool(kwargs.get("fews", False))
+
+            # Tasks are called via BackgroundTasks with positional args.
+            # Expected signatures:
+            #   process_windninja_request(model_id, json_data, resource_provider, fews=False)
+            #   process_windninja_forecast_request(model_id, json_data, resource_provider, fews=False)
+            if resource_provider is None and len(args) >= 2:
+                resource_provider = args[1]
+            if "fews" not in kwargs and len(args) >= 3:
+                fews = bool(args[2])
+
             error_message = f"Error processing WindNinja for model {model_id}: {str(e)}"
             logger.error(error_message)
             logger.error(traceback.format_exc())
             
             # Send error message to Kafka
+            logger.info(f"Error Resource provider {resource_provider} (fews={fews})")
+            kafka_producer = (
+                FewsKafkaMessageProducer(resource_provider)
+                if fews
+                else KafkaMessageProducer(resource_provider)
+            )
             kafka_producer.send_simulation_failed(model_id, error_message)
             raise
     return wrapper
@@ -46,8 +61,8 @@ def process_windninja_request(model_id, json_data, resource_provider, fews: bool
     """
     logger.info(f"Starting background processing for model {model_id} resourceProvider: {resource_provider}")
     
-    # Initialize Kafka producer
-    kafka_producer = KafkaMessageProducer(resource_provider)
+    # Initialize Kafka producer (default vs FEWS)
+    kafka_producer = FewsKafkaMessageProducer(resource_provider) if fews else KafkaMessageProducer(resource_provider)
     
     try:
         # Send progress message: Starting
@@ -148,8 +163,8 @@ def process_windninja_forecast_request(model_id, json_data, resource_provider, f
     """
     logger.info(f"Starting background processing for model {model_id}")
     
-    # Initialize Kafka producer
-    kafka_producer = KafkaMessageProducer(resource_provider)
+    # Initialize Kafka producer (default vs FEWS)
+    kafka_producer = FewsKafkaMessageProducer(resource_provider) if fews else KafkaMessageProducer(resource_provider)
     
     try:
         # Send progress message: Starting

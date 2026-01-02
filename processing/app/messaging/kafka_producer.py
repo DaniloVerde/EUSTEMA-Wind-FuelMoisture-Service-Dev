@@ -5,7 +5,10 @@ from ..config import get_logger
 from ..config.settings import (
     KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC_RESULTS, KAFKA_SECURITY_PROTOCOL,
     KAFKA_SASL_MECHANISM, KAFKA_USERNAME, KAFKA_PASSWORD,
-    KAFKA_SESSION_TIMEOUT_MS, KAFKA_REQUEST_TIMEOUT_MS
+    KAFKA_SESSION_TIMEOUT_MS, KAFKA_REQUEST_TIMEOUT_MS,
+    FEWS_KAFKA_BOOTSTRAP_SERVERS, FEWS_KAFKA_TOPIC_RESULTS, FEWS_KAFKA_SECURITY_PROTOCOL,
+    FEWS_KAFKA_SASL_MECHANISM, FEWS_KAFKA_USERNAME, FEWS_KAFKA_PASSWORD,
+    FEWS_KAFKA_REQUEST_TIMEOUT_MS
 )
 
 # Get module logger
@@ -31,6 +34,38 @@ class KafkaMessageProducer:
             logger.info(f"Kafka producer initialized successfully with topic: {self.topic}")
         except Exception as e:
             logger.error(f"Failed to initialize Kafka producer: {str(e)}")
+            raise
+
+
+class FewsKafkaMessageProducer(KafkaMessageProducer):
+    def __init__(self, resource_provider: str):
+        if not FEWS_KAFKA_TOPIC_RESULTS:
+            raise RuntimeError("FEWS_KAFKA_TOPIC_RESULTS environment variable is not set or empty.")
+
+        logger.info(
+            f"Initializing FEWS Kafka producer with bootstrap servers: {FEWS_KAFKA_BOOTSTRAP_SERVERS}"
+        )
+
+        try:
+            producer_config = {
+                "bootstrap_servers": FEWS_KAFKA_BOOTSTRAP_SERVERS,
+                "value_serializer": lambda v: json.dumps(v).encode("utf-8"),
+                "security_protocol": FEWS_KAFKA_SECURITY_PROTOCOL,
+                "request_timeout_ms": FEWS_KAFKA_REQUEST_TIMEOUT_MS,
+            }
+
+            if FEWS_KAFKA_SECURITY_PROTOCOL and FEWS_KAFKA_SECURITY_PROTOCOL.startswith("SASL"):
+                if not FEWS_KAFKA_USERNAME or not FEWS_KAFKA_PASSWORD:
+                    raise RuntimeError("FEWS Kafka credentials are not set in environment variables.")
+                producer_config["sasl_mechanism"] = FEWS_KAFKA_SASL_MECHANISM
+                producer_config["sasl_plain_username"] = FEWS_KAFKA_USERNAME
+                producer_config["sasl_plain_password"] = FEWS_KAFKA_PASSWORD
+
+            self.producer = KafkaProducer(**producer_config)
+            self.topic = FEWS_KAFKA_TOPIC_RESULTS
+            logger.info(f"FEWS Kafka producer initialized successfully with topic: {self.topic}")
+        except Exception as e:
+            logger.error(f"Failed to initialize FEWS Kafka producer: {str(e)}")
             raise
     
     def send_simulation_complete(self, simulation_id, status, results_url, file_names):
