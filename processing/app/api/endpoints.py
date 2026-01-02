@@ -39,14 +39,14 @@ async def process_windninja(request: WindNinjaRequest, background_tasks: Backgro
     try:
         # Log the request
         logger.info(
-            f"Received processing request for model: {request.modelId}")
+            f"Received processing request for model: {request.modelId} resourceProvider: {request.resource_provider}")
 
         # Convert Pydantic model to dict
         request_data = request.dict()
 
         # Add the task to the background queue
         background_tasks.add_task(
-            process_windninja_request, request.modelId, request_data)
+            process_windninja_request, request.modelId, request_data, request.resource_provider.value)
 
         # Return accepted response
         return ProcessingResponse(
@@ -136,14 +136,14 @@ async def process_windninja_forecast(request: WindNinjaForecastRequest, backgrou
     try:
         # Log the request
         logger.info(
-            f"Received processing request for model: {request.modelId}")
+            f"Received processing request for model: {request.modelId} resourceProvider: {request.resource_provider}")
 
         # Convert Pydantic model to dict
         request_data = request.dict()
 
         # Add the task to the background queue
         background_tasks.add_task(
-            process_windninja_forecast_request, request.modelId, request_data)
+            process_windninja_forecast_request, request.modelId, request_data, request.resource_provider.value)
 
         # Return accepted response
         return ProcessingResponse(

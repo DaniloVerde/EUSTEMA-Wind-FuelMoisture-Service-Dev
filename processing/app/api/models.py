@@ -1,3 +1,4 @@
+from enums import Enum
 from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
@@ -10,7 +11,8 @@ from .enums import (
     SpeedUnits,
     TemperatureUnits,
     VegetationType,
-    WindHeightUnits
+    WindHeightUnits,
+    ResourceProviderType
 )
 
 
@@ -35,6 +37,7 @@ class MeteorologicalStation(BaseModel):
 class WindNinjaRequest(BaseModel):
     """Model for the WindNinja processing request."""
     modelId: str
+    resource_provider: ResourceProviderType
     elevation_file: str
     output_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
@@ -103,6 +106,7 @@ class FuelMoistureResponse(BaseModel):
 class WindNinjaForecastRequest(BaseModel):
     """Model for the WindNinja forecast processing request."""
     modelId: str
+    resource_provider: ResourceProviderType
     elevation_file: str
     input_wind_height: Optional[float] = Field(default=10.0, ge=0.0)
     units_input_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
