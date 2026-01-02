@@ -74,11 +74,28 @@ docker run -d \
 | `MINIO_SECRET_KEY` | Chiave segreta MinIO | `minioadmin` |
 | `MINIO_BUCKET` | Nome del bucket MinIO | `cu68` |
 | `MINIO_FORECAST_BUCKET` | Nome del bucket MinIO per previsioni | `forecast-data` |
+| `FEWS_MINIO_ENDPOINT` | Endpoint MinIO per FEWS (usato solo se `fews=true`) | (fallback: `MINIO_ENDPOINT`) |
+| `FEWS_MINIO_ACCESS_KEY` | Access key MinIO per FEWS (solo se `fews=true`) |  |
+| `FEWS_MINIO_SECRET_KEY` | Secret key MinIO per FEWS (solo se `fews=true`) |  |
+| `FEWS_MINIO_USE_SSL` | Usa SSL per MinIO FEWS (solo se `fews=true`) | (fallback: `MINIO_USE_SSL`) |
+| `FEWS_MINIO_BUCKET` | Bucket MinIO per input/output FEWS (solo se `fews=true`) |  |
+| `FEWS_MINIO_FORECAST_BUCKET` | Bucket MinIO FEWS per forecast (solo se `fews=true`) |  |
 | `KAFKA_BOOTSTRAP_SERVERS` | Server Kafka | `kafka:9092` |
 | `KAFKA_TOPIC` | Topic per notifiche | `windninja-results` |
+| `FEWS_KAFKA_BOOTSTRAP_SERVERS` | Server Kafka per FEWS (solo se `fews=true`) | (fallback: `KAFKA_BOOTSTRAP_SERVERS`) |
+| `FEWS_KAFKA_SECURITY_PROTOCOL` | Security protocol Kafka FEWS (solo se `fews=true`) | (fallback: `KAFKA_SECURITY_PROTOCOL`) |
+| `FEWS_KAFKA_SASL_MECHANISM` | SASL mechanism Kafka FEWS (solo se `fews=true`) | (fallback: `KAFKA_SASL_MECHANISM`) |
+| `FEWS_KAFKA_USERNAME` | Username Kafka FEWS (solo se SASL e `fews=true`) |  |
+| `FEWS_KAFKA_PASSWORD` | Password Kafka FEWS (solo se SASL e `fews=true`) |  |
+| `FEWS_KAFKA_REQUEST_TIMEOUT_MS` | Request timeout Kafka FEWS (solo se `fews=true`) | (fallback: `KAFKA_REQUEST_TIMEOUT_MS`) |
+| `FEWS_KAFKA_TOPIC_RESULTS` | Topic Kafka FEWS per notifiche risultati (solo se `fews=true`) | `fews-windninja-results` |
 | `LOG_LEVEL` | Livello di logging | `INFO` |
 | `LOG_FILE` | Percorso del file di log WindNinja | `/app/logs/windninja.log` |
 | `LOG_TAIL_DEFAULT_LINES` | Numero righe di default per l’endpoint log | `50` |
+
+Note FEWS:
+- Il parametro di request `fews` (default `false`) abilita l'uso di bucket/credenziali MinIO e configurazione Kafka dedicate.
+- Se `fews=false`, il comportamento rimane invariato e vengono usate le variabili standard `MINIO_*` e `KAFKA_*`.
 
 ### Deploy con Docker Compose (Completo)
 
@@ -133,6 +150,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 |-------|------|--------------|-------------|
 | `modelId` | string | Sì | Identificativo univoco del modello |
 | `elevation_file` | string | Sì | Percorso del file di elevazione (formato .tif/.asc) |
+| `fews` | boolean | No | Se `true` usa configurazione FEWS (bucket/credenziali MinIO e Kafka dedicati). Default `false` |
 | `output_wind_height` | float | No | Altezza output del vento (default: 10.0) |
 | `units_output_wind_height` | string | No | Unità altezza output ("m", "ft") |
 | `vegetation` | string | No | Tipo di vegetazione ("trees", "brush", "grass") |
@@ -163,6 +181,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 {
   "modelId": "20250331080030",
   "elevation_file": "input/w46575_s10.tif",
+  "fews": false,
   "output_wind_height": 10,
   "units_output_wind_height": "m",
   "vegetation": "trees",
@@ -217,6 +236,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
 |-------|------|--------------|-------------|
 | `modelId` | string | Sì | Identificativo univoco del modello |
 | `elevation_file` | string | Sì | Percorso del file di elevazione |
+| `fews` | boolean | No | Se `true` usa configurazione FEWS (bucket/credenziali MinIO e Kafka dedicati). Default `false` |
 | `input_wind_height` | float | No | Altezza input del vento (default: 10.0) |
 | `units_input_wind_height` | string | No | Unità altezza input ("m", "ft") |
 | `output_wind_height` | float | No | Altezza output del vento (default: 10.0) |
@@ -236,6 +256,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
 {
   "modelId": "20250331080030",
   "elevation_file": "input/w46575_s10.tif",
+  "fews": false,
   "input_wind_height": 10,
   "units_input_wind_height": "m",
   "output_wind_height": 10,
