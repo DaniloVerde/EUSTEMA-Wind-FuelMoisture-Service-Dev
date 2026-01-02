@@ -155,6 +155,8 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 | `output_wind_height` | float | No | Altezza output del vento (default: 10.0) |
 | `units_output_wind_height` | string | No | Unità altezza output ("m", "ft") |
 | `vegetation` | string | No | Tipo di vegetazione ("trees", "brush", "grass") |
+| `mesh_resolution` | float | No | Risoluzione mesh in metri (default: 200.0) |
+| `dict_metadata` | object | No | Metadati addizionali (inoltrati come metadata/headers custom su upload MinIO dei risultati) |
 | `meteorological_stations` | array | Sì | Array di stazioni meteorologiche |
 
 **Struttura Stazione Meteorologica:**
@@ -175,7 +177,6 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 | `temperature_units` | string | No | Unità temperatura ("C", "F") |
 | `cloud_cover` | float | No | Copertura nuvolosa (0-100%) |
 | `date_time` | datetime | No | Data e ora della misurazione |
-| `dict_metadata` | object | No | Metadati addizionali |
 
 **Esempio Payload:**
 ```json
@@ -187,6 +188,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
   "output_wind_height": 10,
   "units_output_wind_height": "m",
   "vegetation": "trees",
+  "mesh_resolution": 200,
   "meteorological_stations": [
     {
       "station_name": "1",
@@ -252,6 +254,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
 | `uni_air_temp` | float | Sì | Temperatura uniforme dell'aria |
 | `uni_cloud_cover` | float | No | Copertura nuvolosa uniforme |
 | `simulation_time` | datetime | No | Tempo di simulazione |
+| `mesh_resolution` | float | No | Risoluzione mesh in metri (default: 200.0) |
 | `dict_metadata` | object | No | Metadati addizionali |
 
 **Esempio Payload:**
@@ -273,6 +276,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
   "uni_air_temp": 24,
   "uni_cloud_cover": 0,
   "simulation_time": "2025-03-31T12:00",
+  "mesh_resolution": 200,
   "dict_metadata": {
     "author": "Mario Rossi",
     "project": "WindNinja",
@@ -320,7 +324,7 @@ Calcola l'umidità del combustibile basata su osservazioni meteorologiche.
 
 | Campo | Tipo | Obbligatorio | Descrizione |
 |-------|------|--------------|-------------|
-| `datetime` | datetime | Sì | Data e ora dell'osservazione |
+| `date_time` | datetime | Sì | Data e ora dell'osservazione |
 | `measurement` | object | Sì | Misurazioni meteorologiche |
 
 **Struttura Misurazione:**
@@ -343,7 +347,7 @@ Calcola l'umidità del combustibile basata su osservazioni meteorologiche.
       "lon": 12.163408697089425,
       "observations": [
         {
-          "datetime": "2025-03-01T18:00:00",
+          "date_time": "2025-03-01T18:00:00",
           "measurement": {
             "temperature": 24.0,
             "humidity": 50.0,
@@ -352,7 +356,7 @@ Calcola l'umidità del combustibile basata su osservazioni meteorologiche.
           }
         },
         {
-          "datetime": "2025-03-01T17:00:00",
+          "date_time": "2025-03-01T17:00:00",
           "measurement": {
             "temperature": 25.2,
             "humidity": 48.5,
@@ -377,7 +381,7 @@ Calcola l'umidità del combustibile basata su osservazioni meteorologiche.
       "lon": 12.163408697089425,
       "observations": [
         {
-          "datetime": "2025-03-01T18:00:00",
+          "date_time": "2025-03-01T18:00:00",
           "measurement": {
             "temperature": 24.0,
             "humidity": 50.0,
@@ -431,16 +435,21 @@ curl -L -o windninja.log "http://localhost:8000/logs/windninja?download=true"
 | `TemperatureUnits` | C, F | Unità di temperatura |
 | `VegetationType` | trees, brush, grass | Tipo di vegetazione |
 | `WindHeightUnits` | m, ft | Unità altezza vento |
+| `ResourceProviderType` | v6-7, v6-8 | Resource provider per routing topic Kafka |
 
 ### Validazioni
 
-- **Coordinate**: Latitudine [-90, 90], Longitudine [-180, 180]
+- **Coordinate (fuel-moisture)**: Latitudine [-90, 90], Longitudine [-180, 180]
 - **Temperatura**: Range [-30, 60] °C
 - **Direzione vento**: Range [0, 360] gradi
 - **Velocità vento**: Valori ≥ 0
+- **Altezza sensore**: Valori ≥ 0
 - **Umidità**: Range [0, 100] %
 - **Copertura nuvolosa**: Range [0, 100] %
-- **File extensions**: Solo .tif e .asc supportati
+- **Precipitazioni**: Valori ≥ 0
+- **Radiazione solare**: Valori ≥ 0
+- **Mesh resolution**: Valori ≥ 1
+- **File extensions**: `/process` supporta .tif e .asc; `/forecast` supporta .tif, .tiff e .asc
 
 ## Logging e Monitoraggio
 

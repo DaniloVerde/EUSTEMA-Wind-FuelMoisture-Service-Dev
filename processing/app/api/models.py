@@ -43,6 +43,7 @@ class WindNinjaRequest(BaseModel):
     units_output_wind_height: Optional[WindHeightUnits] = WindHeightUnits.METERS
     vegetation: VegetationType = VegetationType.BRUSH
     mesh_resolution: Optional[float] = Field(default=200.0, ge=1.0)
+    dict_metadata: dict = Field(default_factory=dict)
     meteorological_stations: List[MeteorologicalStation]
 
     @field_validator('elevation_file')
