@@ -149,6 +149,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 | Campo | Tipo | Obbligatorio | Descrizione |
 |-------|------|--------------|-------------|
 | `modelId` | string | Sì | Identificativo univoco del modello |
+| `resource_provider` | string | Sì | Resource provider (es. `v6-7`, `v6-8`). Usato per determinare il topic Kafka dei risultati (`dxc-sim-{cu}`) |
 | `elevation_file` | string | Sì | Percorso del file di elevazione (formato .tif/.asc) |
 | `fews` | boolean | No | Se `true` usa configurazione FEWS (bucket/credenziali MinIO e Kafka dedicati). Default `false` |
 | `output_wind_height` | float | No | Altezza output del vento (default: 10.0) |
@@ -180,6 +181,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di stazioni meteorologiche.
 ```json
 {
   "modelId": "20250331080030",
+  "resource_provider": "v6-7",
   "elevation_file": "input/w46575_s10.tif",
   "fews": false,
   "output_wind_height": 10,
@@ -235,6 +237,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
 | Campo | Tipo | Obbligatorio | Descrizione |
 |-------|------|--------------|-------------|
 | `modelId` | string | Sì | Identificativo univoco del modello |
+| `resource_provider` | string | Sì | Resource provider (es. `v6-7`, `v6-8`). Usato per determinare il topic Kafka dei risultati (`dxc-sim-{cu}`) |
 | `elevation_file` | string | Sì | Percorso del file di elevazione |
 | `fews` | boolean | No | Se `true` usa configurazione FEWS (bucket/credenziali MinIO e Kafka dedicati). Default `false` |
 | `input_wind_height` | float | No | Altezza input del vento (default: 10.0) |
@@ -255,6 +258,7 @@ Avvia un'elaborazione WindNinja utilizzando dati di previsione su griglia.
 ```json
 {
   "modelId": "20250331080030",
+  "resource_provider": "v6-7",
   "elevation_file": "input/w46575_s10.tif",
   "fews": false,
   "input_wind_height": 10,
