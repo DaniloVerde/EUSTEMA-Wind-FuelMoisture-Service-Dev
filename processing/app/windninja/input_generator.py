@@ -99,19 +99,6 @@ def download_elevation_file_from_minio(elevation_file_path, output_dir, model_id
         error_message = f"Error downloading elevation file '{elevation_file_path}' from MinIO: {str(e)}"
         logger.error(error_message)
         
-        # If a model_id was provided, send a Kafka message
-        if model_id:
-            try:
-                from ..messaging.kafka_producer import KafkaMessageProducer
-                kafka_producer = KafkaMessageProducer()
-                kafka_producer.send_simulation_failed(
-                    simulation_id=model_id,
-                    error_message=error_message
-                )
-                logger.info(f"Error message sent to Kafka for model {model_id}")
-            except Exception as kafka_err:
-                logger.error(f"Unable to send Kafka message: {str(kafka_err)}")
-        
         # Re-raise the exception for higher-level handling
         raise ValueError(error_message) from e
 
