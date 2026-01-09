@@ -3,6 +3,7 @@ import subprocess
 import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
+import io
 
 from app.windninja.runner import run_windninja
 
@@ -19,7 +20,9 @@ class TestWindNinjaRunner(unittest.TestCase):
         """Test the successful execution of WindNinja."""
         # Configure the mock
         process_mock = MagicMock()
-        process_mock.communicate.return_value = ("Success output", "")
+        process_mock.stdout = io.StringIO("Success output\n")
+        process_mock.stderr = io.StringIO("")
+        process_mock.wait.return_value = 0
         process_mock.returncode = 0
         mock_popen.return_value = process_mock
         
@@ -32,6 +35,7 @@ class TestWindNinjaRunner(unittest.TestCase):
             stdout=unittest.mock.ANY,
             stderr=unittest.mock.ANY,
             universal_newlines=True,
+            bufsize=1,
             cwd=self.test_working_dir
         )
         
@@ -45,7 +49,9 @@ class TestWindNinjaRunner(unittest.TestCase):
         """Test the failure execution of WindNinja."""
         # Configure the mock
         process_mock = MagicMock()
-        process_mock.communicate.return_value = ("", "Error during execution")
+        process_mock.stdout = io.StringIO("")
+        process_mock.stderr = io.StringIO("Error during execution\n")
+        process_mock.wait.return_value = 1
         process_mock.returncode = 1
         mock_popen.return_value = process_mock
         
@@ -62,7 +68,9 @@ class TestWindNinjaRunner(unittest.TestCase):
         """Test timeout during the execution of WindNinja."""
         # Configure the mock to generate a timeout exception
         process_mock = MagicMock()
-        process_mock.communicate.side_effect = subprocess.TimeoutExpired(cmd="WindNinja_cli", timeout=10)
+        process_mock.stdout = io.StringIO("")
+        process_mock.stderr = io.StringIO("")
+        process_mock.wait.side_effect = subprocess.TimeoutExpired(cmd="WindNinja_cli", timeout=10)
         process_mock.kill = MagicMock()
         mock_popen.return_value = process_mock
         
