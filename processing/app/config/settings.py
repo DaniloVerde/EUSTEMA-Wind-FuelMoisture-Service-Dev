@@ -20,6 +20,14 @@ MINIO_FORECAST_BUCKET = os.getenv("MINIO_FORECAST_BUCKET", "forecast-data")
 if not all([MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY]):
     raise RuntimeError("MinIO credentials are not set in environment variables.")
 
+# FEWS MinIO settings (optional; validated only when used)
+FEWS_MINIO_ENDPOINT = os.getenv("FEWS_MINIO_ENDPOINT") or MINIO_ENDPOINT
+FEWS_MINIO_ACCESS_KEY = os.getenv("FEWS_MINIO_ACCESS_KEY")
+FEWS_MINIO_SECRET_KEY = os.getenv("FEWS_MINIO_SECRET_KEY")
+FEWS_MINIO_USE_SSL = os.getenv("FEWS_MINIO_USE_SSL", os.getenv("MINIO_USE_SSL", "False")).lower() == "true"
+FEWS_MINIO_BUCKET = os.getenv("FEWS_MINIO_BUCKET")
+FEWS_MINIO_FORECAST_BUCKET = os.getenv("FEWS_MINIO_FORECAST_BUCKET")
+
 # Kafka settings
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "windninja-results")
@@ -34,6 +42,15 @@ KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "")
 
 if not all([KAFKA_USERNAME, KAFKA_PASSWORD]):
     raise RuntimeError("Kafka credentials are not set in environment variables.")
+
+# FEWS Kafka settings (optional; validated only when used)
+FEWS_KAFKA_BOOTSTRAP_SERVERS = os.getenv("FEWS_KAFKA_BOOTSTRAP_SERVERS") or KAFKA_BOOTSTRAP_SERVERS
+FEWS_KAFKA_TOPIC_RESULTS = os.getenv("FEWS_KAFKA_TOPIC_RESULTS", "fews-windninja-results")
+FEWS_KAFKA_SECURITY_PROTOCOL = os.getenv("FEWS_KAFKA_SECURITY_PROTOCOL") or KAFKA_SECURITY_PROTOCOL
+FEWS_KAFKA_SASL_MECHANISM = os.getenv("FEWS_KAFKA_SASL_MECHANISM") or KAFKA_SASL_MECHANISM
+FEWS_KAFKA_USERNAME = os.getenv("FEWS_KAFKA_USERNAME")
+FEWS_KAFKA_PASSWORD = os.getenv("FEWS_KAFKA_PASSWORD")
+FEWS_KAFKA_REQUEST_TIMEOUT_MS = int(os.getenv("FEWS_KAFKA_REQUEST_TIMEOUT_MS", str(KAFKA_REQUEST_TIMEOUT_MS)))
 
 # WindNinja settings
 WINDNINJA_EXECUTABLE = "WindNinja_cli"

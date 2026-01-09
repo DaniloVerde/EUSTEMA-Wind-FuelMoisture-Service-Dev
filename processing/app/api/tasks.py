@@ -9,8 +9,8 @@ from app.windninja.input_generator import process_windninja_input
 from app.windninja.runner import run_windninja
 from app.windninja_forecast.input_generator import process_windninja_input as process_forecast_input
 from app.windninja_forecast.runner import run_windninja as run_forecast_windninja
-from app.messaging.kafka_producer import KafkaMessageProducer
-from app.storage.minio_client import MinioClient
+from app.messaging.kafka_producer import KafkaMessageProducer, FewsKafkaMessageProducer
+from app.storage.minio_client import MinioClient, FewsMinioClient
 
 # Get module logger
 logger = logging.getLogger(__name__)
@@ -19,23 +19,38 @@ def with_error_handling(func):
     """Decorator to handle errors in background tasks and send Kafka messages."""
     @wraps(func)
     def wrapper(model_id, *args, **kwargs):
-        resource_provider = kwargs.get("resource_provider")
-        logger.info(f"Error Resource provider {resource_provider}")
-        kafka_producer = KafkaMessageProducer(resource_provider)
         try:
             return func(model_id, *args, **kwargs)
         except Exception as e:
+            resource_provider = kwargs.get("resource_provider")
+            fews = bool(kwargs.get("fews", False))
+
+            # Tasks are called via BackgroundTasks with positional args.
+            # Expected signatures:
+            #   process_windninja_request(model_id, json_data, resource_provider, fews=False)
+            #   process_windninja_forecast_request(model_id, json_data, resource_provider, fews=False)
+            if resource_provider is None and len(args) >= 2:
+                resource_provider = args[1]
+            if "fews" not in kwargs and len(args) >= 3:
+                fews = bool(args[2])
+
             error_message = f"Error processing WindNinja for model {model_id}: {str(e)}"
             logger.error(error_message)
             logger.error(traceback.format_exc())
             
             # Send error message to Kafka
+            logger.info(f"Error Resource provider {resource_provider} (fews={fews})")
+            kafka_producer = (
+                FewsKafkaMessageProducer(resource_provider)
+                if fews
+                else KafkaMessageProducer(resource_provider)
+            )
             kafka_producer.send_simulation_failed(model_id, error_message)
             raise
     return wrapper
 
 @with_error_handling
-def process_windninja_request(model_id, json_data, resource_provider):
+def process_windninja_request(model_id, json_data, resource_provider, fews: bool = False):
     """
     Process a WindNinja request in the background.
     
@@ -46,8 +61,8 @@ def process_windninja_request(model_id, json_data, resource_provider):
     """
     logger.info(f"Starting background processing for model {model_id} resourceProvider: {resource_provider}")
     
-    # Initialize Kafka producer
-    kafka_producer = KafkaMessageProducer(resource_provider)
+    # Initialize Kafka producer (default vs FEWS)
+    kafka_producer = FewsKafkaMessageProducer(resource_provider) if fews else KafkaMessageProducer(resource_provider)
     
     try:
         # Send progress message: Starting
@@ -57,7 +72,12 @@ def process_windninja_request(model_id, json_data, resource_provider):
         logger.info(f"Processing input data for model {model_id}")
         # kafka_producer.send_simulation_progress(model_id, 10, "Processing input data")
         
-        _, csv_files, elevation_file, config_file = process_windninja_input(json_data, DATA_DIR)
+        storage_client = FewsMinioClient() if fews else MinioClient()
+        _, csv_files, elevation_file, config_file = process_windninja_input(
+            json_data,
+            DATA_DIR,
+            minio_client=storage_client,
+        )
         
         # Get input and output directories
         input_dir = os.path.join(DATA_DIR, model_id, "input")
@@ -85,8 +105,8 @@ def process_windninja_request(model_id, json_data, resource_provider):
         # Send progress message: WindNinja completed
         # kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
         
-        # Initialize MinIO client
-        minio_client = MinioClient()
+        # Use the correct MinIO client (default vs FEWS)
+        minio_client = storage_client
         
         # Derive the MinIO path from the elevation file path
         elevation_file_path = json_data.get('elevation_file')
@@ -132,7 +152,7 @@ def process_windninja_request(model_id, json_data, resource_provider):
 
 
 @with_error_handling
-def process_windninja_forecast_request(model_id, json_data, resource_provider):
+def process_windninja_forecast_request(model_id, json_data, resource_provider, fews: bool = False):
     """
     Process a WindNinja forecast request in the background.
     
@@ -143,8 +163,8 @@ def process_windninja_forecast_request(model_id, json_data, resource_provider):
     """
     logger.info(f"Starting background processing for model {model_id}")
     
-    # Initialize Kafka producer
-    kafka_producer = KafkaMessageProducer(resource_provider)
+    # Initialize Kafka producer (default vs FEWS)
+    kafka_producer = FewsKafkaMessageProducer(resource_provider) if fews else KafkaMessageProducer(resource_provider)
     
     try:
         # Send progress message: Starting
@@ -154,7 +174,12 @@ def process_windninja_forecast_request(model_id, json_data, resource_provider):
         logger.info(f"Processing input data for model {model_id}, resourceProvider: {resource_provider}")
         # kafka_producer.send_simulation_progress(model_id, 10, "Processing input data")
         
-        _, elevation_file, wind_speed_file, wind_direction_file, config_file = process_forecast_input(json_data, DATA_DIR)
+        storage_client = FewsMinioClient() if fews else MinioClient()
+        _, elevation_file, wind_speed_file, wind_direction_file, config_file = process_forecast_input(
+            json_data,
+            DATA_DIR,
+            minio_client=storage_client,
+        )
         
         # Get input and output directories
         input_dir = os.path.join(DATA_DIR, model_id, "input")
@@ -182,8 +207,8 @@ def process_windninja_forecast_request(model_id, json_data, resource_provider):
         # Send progress message: WindNinja completed
         # kafka_producer.send_simulation_progress(model_id, 70, "WindNinja processing completed, uploading results")
         
-        # Initialize MinIO client
-        minio_client = MinioClient()
+        # Use the correct MinIO client (default vs FEWS)
+        minio_client = storage_client
         
         # Derive the MinIO path from the elevation file path
         elevation_file_path = json_data.get('elevation_file')

@@ -63,7 +63,7 @@ def generate_station_files_from_json(json_filepath, data_dir, model_id=None):
         raise
 
 
-def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generic", is_forecast=False):
+def download_file_from_minio(file_path, output_dir, model_id=None, file_type="generic", is_forecast=False, minio_client=None):
     """
     Download a file from MinIO and save it to the specified directory
 
@@ -90,8 +90,9 @@ def download_file_from_minio(file_path, output_dir, model_id=None, file_type="ge
         logger.debug(f"Local file path: {local_file_path}")
 
         # Initialize MinIO client and download the file
-        logger.debug("Initializing MinIO client")
-        minio_client = MinioClient()
+        if minio_client is None:
+            logger.debug("Initializing MinIO client")
+            minio_client = MinioClient()
 
         # Remove the file if it already exists to avoid conflicts
         # if os.path.exists(local_file_path):
@@ -172,7 +173,8 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             elevation_file = download_file_from_minio(
                 elevation_file_path,
                 input_dir,
-                model_id
+                model_id,
+                minio_client=minio_client,
             )
             logger.debug(f"Elevation file downloaded: {elevation_file}")
         elif not elevation_file:
@@ -189,7 +191,8 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             wind_speed_file = download_file_from_minio(
                 wind_speed_file_path,
                 input_dir,
-                model_id
+                model_id,
+                minio_client=minio_client,
             )
             logger.debug(f"Wind speed file downloaded: {wind_speed_file}")
         
@@ -201,7 +204,8 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
             wind_direction_file = download_file_from_minio(
                 wind_direction_file_path,
                 input_dir,
-                model_id
+                model_id,
+                minio_client=minio_client,
             )
             logger.debug(f"Wind direction file downloaded: {wind_direction_file}")
 
@@ -289,7 +293,7 @@ def generate_windninja_config(json_data, data_dir, model_id=None, elevation_file
         raise
 
 
-def process_windninja_input(json_filepath, data_dir, model_id=None):
+def process_windninja_input(json_filepath, data_dir, model_id=None, minio_client=None):
     """
     Process input data for WindNinja: generate CSV station files,
     download the elevation file and create the configuration file
@@ -343,6 +347,7 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
                 input_dir,
                 model_id,
                 file_type="elevation",
+                minio_client=minio_client,
             )
             logger.debug(f"Elevation file downloaded: {elevation_file}")
         else:
@@ -386,7 +391,8 @@ def process_windninja_input(json_filepath, data_dir, model_id=None):
                 input_dir,
                 model_id,
                 file_type="tiff",
-                is_forecast=True
+                is_forecast=True,
+                minio_client=minio_client,
             )
             u_band = json_data.get('u_band', 1)
             v_band = json_data.get('v_band', 2)
